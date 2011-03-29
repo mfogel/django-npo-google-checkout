@@ -1,0 +1,3 @@
+django-npo-google-checkout
+--------------------------
+Implements google checkout's non-profit checkout and notificaiton API's.
