@@ -2,43 +2,44 @@ from django.template import Context, Template
 from django.utils.safestring import mark_safe
 
 
-class DefaultBackend(object):
+class DefaultOrderSubmitBackend(object):
     """
-    Default NGC backend.
-    Recommended to inherit from this object and override methods as
+    Default handling of order submission.
+    Recommended to inherit from this class and override methods as
     desired.
     """
 
-    def get_order_submit_xml(self, cart_id):
+    def __init__(self, request):
+        super(DefaultOrderSubmitBackend, self).__init__()
+        self.request = request
+        self.user = request.user
+
+    def has_order(self):
+        return False
+
+    def get_order_submit_xml(self):
         """
         http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
         """
-        template = self._get_order_submit_template(cart_id)
-        context = self._get_order_submit_context(cart_id)
+        template = self._get_order_submit_template()
+        context = self._get_order_submit_context()
         return unicode(template.render(context))
 
-    def get_edit_cart_url(self, cart_id):
+    def get_edit_cart_url(self):
         """
         Where GC should send the user to edit their existing cart.
         http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Tag_Reference.html#tag_edit-cart-url
         """
         return None
 
-    def get_continue_shopping_url(self, cart_id):
+    def get_continue_shopping_url(self):
         """
         Where GC should send the user when they're done with the checkout.
         http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Tag_Reference.html#tag_continue-shopping-url
         """
         return None
 
-    def get_active_cart_id(self, user):
-        """
-        Return the id of the user's currently active shopping cart.
-        Assumes user can only have one active shopping cart at a time.
-        """
-        return None
-
-    def _get_shopping_cart_xml(self, cart_id):
+    def _get_shopping_cart_xml(self):
         """
         The shopping cart GC should present the user for review.
         http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Tag_Reference.html#tag_shopping-cart
@@ -58,11 +59,11 @@ class DefaultBackend(object):
         return mark_safe(xml)
 
 
-    def _get_order_submit_context(self, cart_id):
+    def _get_order_submit_context(self):
         return Context({
-                'cs_url': self.get_continue_shopping_url(cart_id),
-                'ec_url': self.get_edit_cart_url(cart_id),
-                'shopping_cart': self._get_shopping_cart_xml(cart_id),
+                'cs_url': self.get_continue_shopping_url(),
+                'ec_url': self.get_edit_cart_url(),
+                'shopping_cart': self._get_shopping_cart_xml(),
             })
 
     ORDER_SUBMIT_TEMPLATE_STR = """{% spaceless %}
@@ -78,5 +79,17 @@ class DefaultBackend(object):
         </checkout-shopping-cart>
     {% endspaceless %}"""
 
-    def _get_order_submit_template(self, cart_id):
+    def _get_order_submit_template(self):
         return Template(self.ORDER_SUBMIT_TEMPLATE_STR)
+
+
+class DefaultBackend(object):
+    """
+    Default NGC backend.
+    Recommended to inherit from this class and override methods as
+    desired.
+    """
+    order_submit_class = DefaultOrderSubmitBackend
+
+    def get_order_submit_instance(self, request):
+        return self.order_submit_class(request)

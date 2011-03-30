@@ -33,7 +33,7 @@ class OrderSubmitView(RedirectView):
                 'Accept': 'application/xml; charset=UTF-8',
                 'Authorization': auth_string,
             }
-        xml = backend.get_order_submit_xml(self.cart_id)
+        xml = self.order_submit_backend.get_order_submit_xml()
 
         request = urllib2.Request(NGC_ORDER_SUBMIT_URL, headers=headers)
         request.add_data(xml)
@@ -49,10 +49,9 @@ class OrderSubmitView(RedirectView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        cart_id = backend.get_active_cart_id(request.user)
-        if not cart_id:
+        self.order_submit_backend = backend.get_order_submit_instance(request)
+        if not self.order_submit_backend.has_order():
             raise Http404("User has no cart")
-        self.cart_id = cart_id
         # TODO: send out a django signal
         return super(OrderSubmitView, self).get(self, request, *args, **kwargs)
 
