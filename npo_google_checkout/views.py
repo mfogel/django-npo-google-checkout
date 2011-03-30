@@ -12,6 +12,7 @@ from django.views.generic import RedirectView, TemplateView
 from signup_login.decorators import login_required
 
 from .backends import get_backend
+from .signals import order_submit
 from . import NGC_ORDER_SUBMIT_URL
 
 backend = get_backend(settings.NGC_BACKEND)
@@ -50,10 +51,14 @@ class OrderSubmitView(RedirectView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         self.order_submit_backend = backend.get_order_submit_instance(request)
-        if not self.order_submit_backend.has_order():
+        if not self.order_submit_backend.has_cart():
             raise Http404("User has no cart")
-        # TODO: send out a django signal
-        return super(OrderSubmitView, self).get(self, request, *args, **kwargs)
+        resp = super(OrderSubmitView, self).get(self, request, *args, **kwargs)
+        order_submit.send(
+                sender=self,
+                cart=self.order_submit_backend.get_cart(),
+                redirect_url=self.get_redirect_url())
+        return resp
 
 
 class NotificationListenerView(TemplateView):

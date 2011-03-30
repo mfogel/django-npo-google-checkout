@@ -14,8 +14,11 @@ class DefaultOrderSubmitBackend(object):
         self.request = request
         self.user = request.user
 
-    def has_order(self):
+    def has_cart(self):
         return False
+
+    def get_cart(self):
+        return None
 
     def get_order_submit_xml(self):
         """
