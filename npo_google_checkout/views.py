@@ -1,4 +1,5 @@
 import base64
+import logging
 import urllib, urllib2
 from xml.etree import ElementTree
 
@@ -8,6 +9,7 @@ from django.http import Http404, HttpResponseServerError
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView, TemplateView
+from django.views.decorators.csrf import csrf_exempt
 
 from signup_login.decorators import login_required
 
@@ -16,6 +18,7 @@ from .signals import order_submit
 from . import NGC_ORDER_SUBMIT_URL
 
 backend = get_backend(settings.NGC_BACKEND)
+logger = logging.getLogger('django.request')
 
 
 class OrderSubmitView(RedirectView):
@@ -67,18 +70,28 @@ class NotificationListenerView(TemplateView):
     def get(self, *args, **kwargs):
         raise Http404("GET method not allowed.")
 
+    # TODO: this fails when on the post. intended?
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+      return super(NotificationListenerView, self).dispatch(*args, **kwargs)
+
     def post(self, request, *args, **kwargs):
+        logger.info("GC notification received.")
         # TODO:
         #   - determine serial number, google order number, set on self
         #   - determine notifcation type
         #   - dispatch django signal as appropriate
         #   - call backend function
         #       - if error, return a 500. Else, return a 200 via...
-        return super(NotificationListener, self).get(
+        return super(NotificationListenerView, self).get(
                 self, request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(NotificationListener, self).get_context_data(**kwargs)
+        context = super(NotificationListenerView, self).get_context_data(
+                **kwargs)
+        # TODO: actually parse the serial number out.
         context.update({
-            'serial_number': self.serial_number,
+            #'serial_number': self.serial_number,
+            'serial_number': '12349493932-23948',
         })
+        return context
