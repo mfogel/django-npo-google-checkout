@@ -56,7 +56,7 @@ class OrderSubmitView(RedirectView):
         self.order_submit_backend = backend.get_order_submit_instance(request)
         if not self.order_submit_backend.has_cart():
             raise Http404("User has no cart")
-        resp = super(OrderSubmitView, self).get(self, request, *args, **kwargs)
+        resp = super(OrderSubmitView, self).get(request, *args, **kwargs)
         order_submit.send(
                 sender=self,
                 cart=self.order_submit_backend.get_cart(),
@@ -76,7 +76,7 @@ class NotificationListenerView(TemplateView):
       return super(NotificationListenerView, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        logger.info("GC notification received.")
+        logger.info("GC notification received.", extra={'request': request})
         # TODO:
         #   - determine serial number, google order number, set on self
         #   - determine notifcation type
@@ -84,7 +84,7 @@ class NotificationListenerView(TemplateView):
         #   - call backend function
         #       - if error, return a 500. Else, return a 200 via...
         return super(NotificationListenerView, self).get(
-                self, request, *args, **kwargs)
+                request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(NotificationListenerView, self).get_context_data(
