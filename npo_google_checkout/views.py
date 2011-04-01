@@ -76,9 +76,11 @@ class NotificationListenerView(TemplateView):
       return super(NotificationListenerView, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        logger.info("GC notification received.", extra={'request': request})
+        tree = ElementTree.XML(request.raw_post_data)
+        self.serial_number = tree.attrib['serial-number']
+        logger.info("GC notification {0} received.".format(self.serial_number),
+                extra={'request': request})
         # TODO:
-        #   - determine serial number, google order number, set on self
         #   - determine notifcation type
         #   - dispatch django signal as appropriate
         #   - call backend function
@@ -87,11 +89,9 @@ class NotificationListenerView(TemplateView):
                 request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(NotificationListenerView, self).get_context_data(
-                **kwargs)
-        # TODO: actually parse the serial number out.
+        context = super(NotificationListenerView, self).\
+                get_context_data(**kwargs)
         context.update({
-            #'serial_number': self.serial_number,
-            'serial_number': '12349493932-23948',
+            'serial_number': self.serial_number,
         })
         return context
