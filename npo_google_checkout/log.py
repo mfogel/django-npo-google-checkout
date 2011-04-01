@@ -7,7 +7,7 @@ class FileRequestHandler(logging.FileHandler):
     """
     def emit(self, record):
         if record.request:
-            record.msg = "\n -- {0} raw_post_data below --\n{1}".\
+            record.msg = "\n -- {0}\n -- raw_post_data below:\n{1}".\
                     format(record.msg, record.request.raw_post_data)
         # logging handler classes are still 'classic' classes, arg.
         return logging.FileHandler.emit(self, record)

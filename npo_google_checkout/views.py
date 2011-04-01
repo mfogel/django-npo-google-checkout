@@ -19,6 +19,7 @@ from . import NGC_ORDER_SUBMIT_URL
 
 backend = get_backend(settings.NGC_BACKEND)
 logger = logging.getLogger('django.request')
+xmlns = 'http://checkout.google.com/schema/2'
 
 
 class OrderSubmitView(RedirectView):
@@ -45,8 +46,9 @@ class OrderSubmitView(RedirectView):
         handle = urllib2.urlopen(request, timeout=settings.NGC_HTTP_TIMEOUT)
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
-            tree = ElementTree.XML(handle.read())
-            redirect_url = tree[0].text;
+            redirect_xml = ElementTree.XML(handle.read())
+            xpath_query = '{{{0}}}redirect-url'.format(xmlns)
+            redirect_url = redirect_xml.find(xpath_query).text;
         except:
             return HttpResponseServerError("Sorry - we're having trouble communicating with google checkout.")
         return redirect_url
@@ -76,12 +78,19 @@ class NotificationListenerView(TemplateView):
       return super(NotificationListenerView, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        tree = ElementTree.XML(request.raw_post_data)
-        self.serial_number = tree.attrib['serial-number']
-        logger.info("GC notification {0} received.".format(self.serial_number),
+        notif_xml = ElementTree.XML(request.raw_post_data)
+        self.notif_type = notif_xml.tag
+        self.serial_number = notif_xml.get('serial-number')
+        xpath_query = '{{{0}}}order-summary/{{{0}}}shopping-cart/{{{0}}}merchant-private-data'.format(xmlns)
+        self.cart_id = notif_xml.find(xpath_query).text
+        self.order_submit_backend = \
+            backend.get_order_submit_instance(request, cart_id=self.cart_id)
+
+        logger.info("GC {0} notification {1} received.".format(
+                    self.notif_type, self.serial_number),
                 extra={'request': request})
+
         # TODO:
-        #   - determine notifcation type
         #   - dispatch django signal as appropriate
         #   - call backend function
         #       - if error, return a 500. Else, return a 200 via...

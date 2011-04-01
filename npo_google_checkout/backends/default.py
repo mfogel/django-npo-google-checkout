@@ -9,16 +9,16 @@ class DefaultOrderSubmitBackend(object):
     desired.
     """
 
-    def __init__(self, request):
+    def __init__(self, request, cart_id=None):
         super(DefaultOrderSubmitBackend, self).__init__()
         self.request = request
-        self.user = request.user
+        self.cart_id = cart_id
 
     def has_cart(self):
-        return False
+        return self.cart_id is not None
 
     def get_cart(self):
-        return None
+        raise NotImplementedError('Override me to interface with your cart system')
 
     def get_order_submit_xml(self):
         """
@@ -42,9 +42,9 @@ class DefaultOrderSubmitBackend(object):
         """
         return None
 
-    def _get_shopping_cart_xml(self):
+    def _get_items_xml(self):
         """
-        The shopping cart GC should present the user for review.
+        The items in the shopping cart GC should present the user for review.
         http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Tag_Reference.html#tag_shopping-cart
 
         Carts must contain at least one item.
@@ -61,18 +61,29 @@ class DefaultOrderSubmitBackend(object):
         """
         return mark_safe(xml)
 
+    def _get_merchant_private_data(self):
+        """
+        Default implementation: merchant private data used to tie a
+        google order number to a specific instance of your checkout
+        system's cart.
+        """
+        return self.cart_id
 
     def _get_order_submit_context(self):
         return Context({
                 'cs_url': self.get_continue_shopping_url(),
                 'ec_url': self.get_edit_cart_url(),
-                'shopping_cart': self._get_shopping_cart_xml(),
+                'items_xml': self._get_items_xml(),
+                'private_data': self._get_merchant_private_data(),
             })
 
     ORDER_SUBMIT_TEMPLATE_STR = """{% spaceless %}
         <?xml version="1.0" encoding="UTF-8"?>
         <checkout-shopping-cart xmlns="http://checkout.google.com/schema/2">
-            <shopping-cart>{{ shopping_cart|default:'' }}</shopping-cart>
+            <shopping-cart>
+                {{ items_xml }}
+                <merchant-private-data>{{ private_data }}</merchant-private-data>
+            </shopping-cart>
             <checkout-flow-support>
                 <merchant-checkout-flow-support>
                     {% if cs_url %}<continue-shopping-url>{{ cs_url }}</continue-shopping-url>{% endif %}
@@ -94,5 +105,5 @@ class DefaultBackend(object):
     """
     order_submit_class = DefaultOrderSubmitBackend
 
-    def get_order_submit_instance(self, request):
-        return self.order_submit_class(request)
+    def get_order_submit_instance(self, request, **kwargs):
+        return self.order_submit_class(request, **kwargs)
