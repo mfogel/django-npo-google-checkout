@@ -54,8 +54,8 @@ class DefaultOrderSubmitBackend(object):
                 <item>
                     <item-name>example item name</item-name>
                     <item-description>example item desc</item-description>
-                    <unit-price currency="USD">1.01</unit-price>
-                    <quantity>42</quantity>
+                    <unit-price currency="USD">42.42</unit-price>
+                    <quantity>1</quantity>
                 </item>
             </items>
         """
