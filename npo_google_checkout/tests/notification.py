@@ -5,8 +5,9 @@ Tests for the notifcation API.
 from xml.etree import ElementTree
 from os.path import dirname, join
 
-from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.conf import settings
+from django.test import TestCase
 
 from .google_checkout_client import GCClient
 
@@ -22,6 +23,8 @@ class NotificationTests(TestCase):
     def setUp(self):
         self.path = reverse('ngc-notification-listener')
         self.data_dir = join(dirname(__file__), 'data')
+        settings.NGC_BACKEND = \
+                'npo_google_checkout.backends.default.DefaultBackend'
 
     def test_basic(self):
         """
@@ -38,6 +41,6 @@ class NotificationTests(TestCase):
         xml = open(join(self.data_dir, 'new-order-notification.xml')).read()
         serial_number = ElementTree.XML(xml).get('serial-number')
         res = self.client.post_notification(self.path, xml)
-        self.assertEqual(res.raw_post_data,
+        self.assertEqual(res.content.strip(),
                 RESPONSE_FRMT_STR.format(serial_number=serial_number))
         # TODO: test some internal state

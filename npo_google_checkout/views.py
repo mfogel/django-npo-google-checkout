@@ -17,7 +17,6 @@ from .backends import get_backend
 from .signals import order_submit
 from . import NGC_ORDER_SUBMIT_URL
 
-backend = get_backend(settings.NGC_BACKEND)
 logger = logging.getLogger('django.request')
 xmlns = 'http://checkout.google.com/schema/2'
 
@@ -55,6 +54,7 @@ class OrderSubmitView(RedirectView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
+        backend = get_backend(settings.NGC_BACKEND)
         self.order_submit_backend = backend.get_order_submit_instance(request)
         if not self.order_submit_backend.has_cart():
             raise Http404("User has no cart")
@@ -83,6 +83,7 @@ class NotificationListenerView(TemplateView):
         self.serial_number = notif_xml.get('serial-number')
         xpath_query = '{{{0}}}order-summary/{{{0}}}shopping-cart/{{{0}}}merchant-private-data'.format(xmlns)
         self.cart_id = notif_xml.find(xpath_query).text
+        backend = get_backend(settings.NGC_BACKEND)
         self.order_submit_backend = \
             backend.get_order_submit_instance(request, cart_id=self.cart_id)
 
