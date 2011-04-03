@@ -38,9 +38,20 @@ class NotificationTests(TestCase):
             'charge-amount-notification'
         """
 
-        xml = open(join(self.data_dir, 'new-order-notification.xml')).read()
+        # TODO: test internal state in between these calls
+        res = self._base_notification('new-order-notification.xml')
+        res = self._base_notification('order-state-change-notification_1-reviewing-chargeable.xml')
+        res = self._base_notification('risk-information-notification.xml')
+        res = self._base_notification('authorization-amount-notification.xml')
+        res = self._base_notification('order-state-change-notification_2-chargeable-charging.xml')
+        res = self._base_notification('order-state-change-notification_3-charging-charged.xml')
+        res = self._base_notification('charge-amount-notification.xml')
+
+
+    def _base_notification(self, filename):
+        xml = open(join(self.data_dir, filename)).read()
         serial_number = ElementTree.XML(xml).get('serial-number')
-        res = self.client.post_notification(self.path, xml)
-        self.assertEqual(res.content.strip(),
+        response = self.client.post_notification(self.path, xml)
+        self.assertEqual(response.content.strip(),
                 RESPONSE_FRMT_STR.format(serial_number=serial_number))
-        # TODO: test some internal state
+        return response
