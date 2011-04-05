@@ -5,7 +5,7 @@ from decimal import Decimal
 import logging
 import time
 import urllib, urllib2
-from xml.etree import ElementTree
+from xml.etree.ElementTree import XML
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from signup_login.decorators import login_required
 
 from .backends import get_backend_class
-from .models import GoogleOrder
+from .models import *
 from .signals import *
 from .xpath import *
 from . import NGC_ORDER_SUBMIT_URL
@@ -51,8 +51,9 @@ class OrderSubmitView(RedirectView):
         handle = urllib2.urlopen(request, timeout=settings.NGC_HTTP_TIMEOUT)
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
-            redirect_xml = ElementTree.XML(handle.read())
+            redirect_xml = XML(handle.read())
             redirect_url = redirect_xml.find(xpq_redirect_url).text;
+            self.serial_number = redirect_xml.get('serial-number')
         except:
             return HttpResponseServerError("Sorry - we're having trouble communicating with google checkout.")
         return redirect_url
@@ -63,11 +64,18 @@ class OrderSubmitView(RedirectView):
         self.backend = backend_class(request, cart_id=self.cart_id)
         if not self.backend.has_cart():
             raise Http404("User has no cart")
+
+        cart = self.backend.get_cart(),
+        redirect_url = self.get_redirect_url()
         resp = super(OrderSubmitView, self).get(request, *args, **kwargs)
-        order_submit.send(
-                sender=self,
-                cart=self.backend.get_cart(),
-                redirect_url=self.get_redirect_url())
+
+        logger.info(
+            "GC order-redirect #{1} received.".format(self.serial_number),
+            extra={'request': request})
+
+        OrderSubmitRedirect.objects.create(
+                cart=cart, redirect_url=redirect_url)
+        order_submit.send(self, cart=self.cart, redirect_url=redirect_url)
         return resp
 
 
@@ -83,10 +91,10 @@ class NotificationListenerView(TemplateView):
       return super(NotificationListenerView, self).dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        notify_xml = ElementTree.XML(request.raw_post_data)
+        notify_xml = XML(request.raw_post_data)
         self.notify_type = self._extract_notify_type(notify_xml)
         self.notify_type_const = \
-                GoogleOrder.get_notify_type_const(self.notify_type)
+            GoogleOrder.trans_notify_type_const(self.notify_type)
         self.timestamp = self._extract_timestamp(notify_xml)
         self.serial_number = notify_xml.get('serial-number')
         self.order_number = long(notify_xml.findtext(xpq_order_number))
@@ -96,9 +104,10 @@ class NotificationListenerView(TemplateView):
         self.backend = backend_class(request, cart_id=cart_id)
         self.cart = self.backend.get_cart()
 
-        logger.info("GC {0} #{1} received.".format(
-                    self.notify_type, self.serial_number),
-                extra={'request': request})
+        logger.info(
+            "GC {0} #{1} received.".format(
+                self.notify_type, self.serial_number),
+            extra={'request': request})
 
         # notification type-specific handling
         if self.notify_type_const == GoogleOrder.NEW_ORDER_NOTIFY_TYPE:
@@ -124,8 +133,8 @@ class NotificationListenerView(TemplateView):
                 request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(NotificationListenerView, self).\
-                get_context_data(**kwargs)
+        context = super(NotificationListenerView, self). \
+            get_context_data(**kwargs)
         context.update({
             'serial_number': self.serial_number,
         })
@@ -154,7 +163,7 @@ class NotificationListenerView(TemplateView):
     def _post_order_state_change(self, order, notify_xml):
         old_state = order.state
         new_state_string = notify_xml.findtext(xpq_new_state)
-        new_state = GoogleOrder.get_state_const(new_state_string)
+        new_state = GoogleOrder.trans_state_const(new_state_string)
         order.state = new_state
         order.save()
         notification_order_state_change.send(self,

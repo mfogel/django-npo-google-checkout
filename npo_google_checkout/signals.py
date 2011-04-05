@@ -4,7 +4,6 @@ order_submit = Signal(providing_args=['cart', 'redirect-url'])
 
 notification_new_order = \
     Signal(providing_args=['cart', 'order'])
-
 notification_order_state_change = \
     Signal(providing_args=['cart', 'order', 'old_state', 'new_state'])
 notification_risk_information = \

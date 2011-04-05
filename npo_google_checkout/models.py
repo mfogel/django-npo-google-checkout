@@ -38,7 +38,7 @@ class GoogleOrder(models.Model):
     )
 
     @classmethod
-    def get_state_const(cls, state_string):
+    def trans_state_const(cls, state_string):
         for pair in cls.STATE_CHOICES:
             if pair[1] == state_string:
                 return pair[0]
@@ -60,14 +60,13 @@ class GoogleOrder(models.Model):
     )
 
     @classmethod
-    def get_notify_type_const(cls, notify_type_string):
+    def trans_notify_type_const(cls, notify_type_string):
         for pair in cls.NOTIFY_TYPE_CHOICES:
             if pair[1] == notify_type_string:
                 return pair[0]
         return None
 
     # TODO: integrate google order expiration dt?
-    # TODO: integrate amount charged?
 
     cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
     # FIXME: no PositiveBigIntegerField ?
