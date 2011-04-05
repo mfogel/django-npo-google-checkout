@@ -89,9 +89,9 @@ class NotificationListenerView(TemplateView):
                 GoogleOrder.get_notify_type_const(self.notify_type)
         self.timestamp = self._extract_timestamp(notify_xml)
         self.serial_number = notify_xml.get('serial-number')
-        self.order_number = notify_xml.find(xpq_order_number).text
+        self.order_number = long(notify_xml.findtext(xpq_order_number))
 
-        cart_id = notify_xml.find(xpq_merchant_private_data).text
+        cart_id = notify_xml.findtext(xpq_merchant_private_data)
         backend_class = get_backend_class(settings.NGC_BACKEND)
         self.backend = backend_class(request, cart_id=cart_id)
         self.cart = self.backend.get_cart()
@@ -153,7 +153,7 @@ class NotificationListenerView(TemplateView):
 
     def _post_order_state_change(self, order, notify_xml):
         old_state = order.state
-        new_state_string = notify_xml.find(xpq_new_state).text
+        new_state_string = notify_xml.findtext(xpq_new_state)
         new_state = GoogleOrder.get_state_const(new_state_string)
         order.state = new_state
         order.save()
@@ -170,7 +170,7 @@ class NotificationListenerView(TemplateView):
 
     def _post_authorization_amount(self, order, notify_xml):
         order.save()
-        auth_amount = notify_xml.find(xpq_authorization_amount).text
+        auth_amount = Decimal(notify_xml.findtext(xpq_authorization_amount))
         notification_risk_information.send(self,
                 cart=self.cart, order=order,
                 authorization_amount=auth_amount)
@@ -179,7 +179,7 @@ class NotificationListenerView(TemplateView):
         order.amount_charged = \
             Decimal(notify_xml.find(xpq_total_charge_amount).text)
         order.save()
-        latest_amount = notify_xml.find(xpq_latest_charge_amount).text
+        latest_amount = Decimal(notify_xml.findtext(xpq_latest_charge_amount))
         notification_risk_information.send(self,
                 cart=self.cart, order=order,
                 latest_amount=latest_amount, total_amount=order.amount_charged)
