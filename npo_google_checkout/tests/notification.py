@@ -15,6 +15,7 @@ from django.test import TestCase
 
 from .google_checkout_client import GCClient
 from ..models import GoogleOrder
+from ..xpath import *
 
 RESPONSE_FRMT_STR = """<notification-acknowledgment xmlns="http://checkout.google.com/schema/2" serial-number="{serial_number}" />"""
 
@@ -55,7 +56,7 @@ class NotificationTests(TestCase):
 
         # extract some data from the test data
         no_xml = XML(open(join(self.new_order_path)).read())
-        self.order_number = long(no_xml.find(self.xpq_order_number).text)
+        self.order_number = long(no_xml.find(xpq_order_number).text)
         self.new_order_timestamp = self._extract_timestamp(no_xml)
 
         osc1_xml = XML(open(join(self.order_state_change_1_path)).read())
@@ -75,11 +76,11 @@ class NotificationTests(TestCase):
 
         ca_xml = XML(open(join(self.charge_amount_path)).read())
         self.charge_amount_timestamp = self._extract_timestamp(ca_xml)
-        self.total_charge_amount = Decimal(ca_xml.find(self.xpq_total_charge_amount).text)
+        self.total_charge_amount = Decimal(ca_xml.find(xpq_total_charge_amount).text)
 
     def _extract_timestamp(self, notify_xml):
         """Extract the timestamp, converted to the local timezone"""
-        ts_utc = dt_parse(notify_xml.find(self.xpq_timestamp).text)
+        ts_utc = dt_parse(notify_xml.find(xpq_timestamp).text)
         ts_local = ts_utc - timedelta(seconds=time.timezone)
         ts_local = ts_local.replace(tzinfo=None)
         return ts_local

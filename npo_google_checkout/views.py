@@ -20,6 +20,7 @@ from signup_login.decorators import login_required
 from .backends import get_backend_class
 from .models import GoogleOrder
 from .signals import *
+from .xpath import *
 from . import NGC_ORDER_SUBMIT_URL
 
 logger = logging.getLogger('django.request')
@@ -51,8 +52,7 @@ class OrderSubmitView(RedirectView):
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
             redirect_xml = ElementTree.XML(handle.read())
-            xpq = '{{{0}}}redirect-url'.format(xmlns)
-            redirect_url = redirect_xml.find(xpq).text;
+            redirect_url = redirect_xml.find(xpq_redirect_url).text;
         except:
             return HttpResponseServerError("Sorry - we're having trouble communicating with google checkout.")
         return redirect_url
@@ -74,15 +74,6 @@ class OrderSubmitView(RedirectView):
 class NotificationListenerView(TemplateView):
     template_name = 'npo_google_checkout/notification_acknowledgment.html'
 
-    xpq_timestamp = '{{{0}}}timestamp'.format(xmlns)
-    xpq_order_number = '{{{0}}}google-order-number'.format(xmlns)
-    xpq_new_state = '{{{0}}}new-financial-order-state'.format(xmlns)
-    xpq_risk_info = '{{{0}}}risk-information'.format(xmlns)
-    xpq_authorization_amount = '{{{0}}}authorization-amount'.format(xmlns)
-    xpq_latest_charge_amount= '{{{0}}}latest-charge-amount'.format(xmlns)
-    xpq_total_charge_amount= '{{{0}}}total-charge-amount'.format(xmlns)
-    xpq_merchant_private_data = '{{{0}}}order-summary/{{{0}}}shopping-cart/{{{0}}}merchant-private-data'.format(xmlns)
-
     def get(self, *args, **kwargs):
         raise Http404("GET method not allowed.")
 
@@ -98,9 +89,9 @@ class NotificationListenerView(TemplateView):
                 GoogleOrder.get_notify_type_const(self.notify_type)
         self.timestamp = self._extract_timestamp(notify_xml)
         self.serial_number = notify_xml.get('serial-number')
-        self.order_number = notify_xml.find(self.xpq_order_number).text
+        self.order_number = notify_xml.find(xpq_order_number).text
 
-        cart_id = notify_xml.find(self.xpq_merchant_private_data).text
+        cart_id = notify_xml.find(xpq_merchant_private_data).text
         backend_class = get_backend_class(settings.NGC_BACKEND)
         self.backend = backend_class(request, cart_id=cart_id)
         self.cart = self.backend.get_cart()
@@ -149,7 +140,7 @@ class NotificationListenerView(TemplateView):
 
     def _extract_timestamp(self, notify_xml):
         """Extract the timestamp, converted to the local timezone"""
-        ts_utc = dt_parse(notify_xml.find(self.xpq_timestamp).text)
+        ts_utc = dt_parse(notify_xml.find(xpq_timestamp).text)
         ts_local = ts_utc - timedelta(seconds=time.timezone)
         ts_local = ts_local.replace(tzinfo=None)
         return ts_local
@@ -162,7 +153,7 @@ class NotificationListenerView(TemplateView):
 
     def _post_order_state_change(self, order, notify_xml):
         old_state = order.state
-        new_state_string = notify_xml.find(self.xpq_new_state).text
+        new_state_string = notify_xml.find(xpq_new_state).text
         new_state = GoogleOrder.get_state_const(new_state_string)
         order.state = new_state
         order.save()
@@ -172,23 +163,23 @@ class NotificationListenerView(TemplateView):
 
     def _post_risk_informaiton(self, order, notify_xml):
         order.save()
-        risk_info_xml_node = notify_xml.find(self.xpq_risk_info)
+        risk_info_xml_node = notify_xml.find(xpq_risk_info)
         notification_risk_information.send(self,
                 cart=self.cart, order=order,
                 risk_info_xml_node=risk_info_xml_node)
 
     def _post_authorization_amount(self, order, notify_xml):
         order.save()
-        auth_amount = notify_xml.find(self.xpq_authorization_amount).text
+        auth_amount = notify_xml.find(xpq_authorization_amount).text
         notification_risk_information.send(self,
                 cart=self.cart, order=order,
                 authorization_amount=auth_amount)
 
     def _post_charge_amount(self, order, notify_xml):
         order.amount_charged = \
-            Decimal(notify_xml.find(self.xpq_total_charge_amount).text)
+            Decimal(notify_xml.find(xpq_total_charge_amount).text)
         order.save()
-        latest_amount = notify_xml.find(self.xpq_latest_charge_amount).text
+        latest_amount = notify_xml.find(xpq_latest_charge_amount).text
         notification_risk_information.send(self,
                 cart=self.cart, order=order,
                 latest_amount=latest_amount, total_amount=order.amount_charged)
