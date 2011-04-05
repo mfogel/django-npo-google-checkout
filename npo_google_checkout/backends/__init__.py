@@ -13,7 +13,7 @@ try:
 except ImportError:
     from django.utils.importlib import import_module
 
-def get_backend(path):
+def get_backend_class(path):
     """
     Return an instance of a npo_google_checkout backend, given the dotted
     Python import path (as a string) to the backend class.
@@ -34,5 +34,5 @@ def get_backend(path):
         backend_class = getattr(mod, attr)
     except AttributeError:
         raise ImproperlyConfigured('Module "%s" does not define a npo_google_checkout backend named "%s"' % (module, attr))
-    return backend_class()
+    return backend_class
 

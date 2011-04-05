@@ -2,7 +2,7 @@ from django.template import Context, Template
 from django.utils.safestring import mark_safe
 
 
-class DefaultOrderSubmitBackend(object):
+class DefaultBackend(object):
     """
     Default handling of order submission.
     Recommended to inherit from this class and override methods as
@@ -10,7 +10,7 @@ class DefaultOrderSubmitBackend(object):
     """
 
     def __init__(self, request, cart_id=None):
-        super(DefaultOrderSubmitBackend, self).__init__()
+        super(DefaultBackend, self).__init__()
         self.request = request
         self.cart_id = cart_id
 
@@ -18,7 +18,10 @@ class DefaultOrderSubmitBackend(object):
         return self.cart_id is not None
 
     def get_cart(self):
-        raise NotImplementedError('Override me to interface with your cart system')
+        """
+        Use self.cart_id and self.request to access to access the user's cart.
+        """
+        return None
 
     def get_order_submit_xml(self):
         """
@@ -95,15 +98,3 @@ class DefaultOrderSubmitBackend(object):
 
     def _get_order_submit_template(self):
         return Template(self.ORDER_SUBMIT_TEMPLATE_STR)
-
-
-class DefaultBackend(object):
-    """
-    Default NGC backend.
-    Recommended to inherit from this class and override methods as
-    desired.
-    """
-    order_submit_class = DefaultOrderSubmitBackend
-
-    def get_order_submit_instance(self, request, **kwargs):
-        return self.order_submit_class(request, **kwargs)

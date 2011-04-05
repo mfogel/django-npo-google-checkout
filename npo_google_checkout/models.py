@@ -15,34 +15,72 @@ class OrderSubmitRedirect(models.Model):
         return unicode(sef.cart) + ' -> ' + self.redirect_url
 
 class GoogleOrder(models.Model):
+    # best practices for choices still kinda suck
+    # http://www.b-list.org/weblog/2007/nov/02/handle-choices-right-way/
+
     # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Notification_API.html#tag_financial-order-state
+    REVIEWING_STATE = 0
+    CHARGEABLE_STATE = 1
+    CHARGING_STATE = 2
+    CHARGED_STATE = 3
+    PAYMENT_DECLINED_STATE = 4
+    CANCELLED_STATE = 5
+    CANCELLED_BY_GOOGLE_STATE = 6
+
     STATE_CHOICES = (
-        (0, 'REVIEWING'),
-        (1, 'CHARGEABLE'),
-        (2, 'CHARGING'),
-        (3, 'CHARGED'),
-        (4, 'PAYMENT_DECLINED'),
-        (5, 'CANCELLED'),
-        (6, 'CANCELLED_BY_GOOGLE'),
+        (REVIEWING_STATE, 'REVIEWING'),
+        (CHARGEABLE_STATE, 'CHARGEABLE'),
+        (CHARGING_STATE, 'CHARGING'),
+        (CHARGED_STATE, 'CHARGED'),
+        (PAYMENT_DECLINED_STATE, 'PAYMENT_DECLINED'),
+        (CANCELLED_STATE, 'CANCELLED'),
+        (CANCELLED_BY_GOOGLE_STATE, 'CANCELLED_BY_GOOGLE'),
     )
 
-    cart = models.ForeignKey(settings.NGC_CART_MODEL)
-    # TODO: no PositiveBigIntegerField ?
+    @classmethod
+    def get_state_const(cls, state_string):
+        for pair in cls.STATE_CHOICES:
+            if pair[1] == state_string:
+                return pair[0]
+        return None
+
+    # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Notification_API.html#Types_of_Notifications
+    NEW_ORDER_NOTIFY_TYPE = 0
+    ORDER_STATE_CHANGE_NOTIFY_TYPE = 1
+    RISK_INFORMATION_NOTIFY_TYPE = 2
+    AUTHORIZATION_AMOUNT_NOTIFY_TYPE = 3
+    CHARGE_AMOUNT_NOTIFY_TYPE = 4
+
+    NOTIFY_TYPE_CHOICES = (
+        (NEW_ORDER_NOTIFY_TYPE, 'new-order-notification'),
+        (ORDER_STATE_CHANGE_NOTIFY_TYPE, 'order-state-change-notification'),
+        (RISK_INFORMATION_NOTIFY_TYPE, 'risk-information-notification'),
+        (AUTHORIZATION_AMOUNT_NOTIFY_TYPE, 'authorization-amount-notification'),
+        (CHARGE_AMOUNT_NOTIFY_TYPE, 'charge-amount-notification'),
+    )
+
+    @classmethod
+    def get_notify_type_const(cls, notify_type_string):
+        for pair in cls.NOTIFY_TYPE_CHOICES:
+            if pair[1] == notify_type_string:
+                return pair[0]
+        return None
+
+    # TODO: integrate google order expiration dt?
+    # TODO: integrate amount charged?
+
+    cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
+    # FIXME: no PositiveBigIntegerField ?
     number = models.BigIntegerField(_('Number'), db_index=True)
     state = models.PositiveSmallIntegerField(_('State'),
-            choices=STATE_CHOICES, default=0)
-    dt_init = models.DateTimeField(_('DateTime Initialized'),
-            auto_now_add=True)
-    dt_state_last_changed = models.DateTimeField(
-            _('DateTime State Last Changed'), auto_now_add=True)
+            choices=STATE_CHOICES, default=REVIEWING_STATE)
+    dt_init = models.DateTimeField(_('DateTime Initialized'))
+
+    last_notify_type = models.PositiveSmallIntegerField(
+            _('Last Notification Type'),
+            choices=NOTIFY_TYPE_CHOICES, default=NEW_ORDER_NOTIFY_TYPE)
+    last_notify_dt = models.DateTimeField(
+            _('Last Notification DateTime Received'))
 
     def __unicode__(self):
         return u'Google Order #{0}'.format(self.number)
-
-
-# signal redievers
-
-@receiver(order_submit)
-def order_submit(sender, **kwargs):
-    OrderSubmitRedirect.objects.create(
-            cart=kwargs['cart'], redirect_url=kwargs['redirect_url'])
