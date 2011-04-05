@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from .signals import order_submit
 
+
 class OrderSubmitRedirect(models.Model):
     cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
     redirect_url = models.URLField(_('Redirect URL'))
@@ -13,6 +14,7 @@ class OrderSubmitRedirect(models.Model):
 
     def __unicode__(self):
         return unicode(sef.cart) + ' -> ' + self.redirect_url
+
 
 class GoogleOrder(models.Model):
     # best practices for choices still kinda suck
