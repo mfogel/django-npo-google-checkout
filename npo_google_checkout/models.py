@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from .signals import order_submit
 
 class OrderSubmitRedirect(models.Model):
-    cart = models.ForeignKey(settings.NGC_CART_MODEL)
+    cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
     redirect_url = models.URLField(_('Redirect URL'))
     dt = models.DateTimeField(_('DateTime'), auto_now_add=True)
 

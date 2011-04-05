@@ -9,17 +9,14 @@ class DefaultBackend(object):
     desired.
     """
 
-    def __init__(self, request, cart_id=None):
+    def __init__(self, request, private_data=None):
         super(DefaultBackend, self).__init__()
         self.request = request
-        self.cart_id = cart_id
-
-    def has_cart(self):
-        return self.cart_id is not None
+        self.private_data = private_data
 
     def get_cart(self):
         """
-        Use self.cart_id and self.request to access to access the user's cart.
+        Use self.private_data and self.request to access the user's cart.
         """
         return None
 
@@ -70,7 +67,7 @@ class DefaultBackend(object):
         google order number to a specific instance of your checkout
         system's cart.
         """
-        return self.cart_id
+        return self.private_data
 
     def _get_order_submit_context(self):
         return Context({

@@ -21,7 +21,6 @@ from .backends import get_backend_class
 from .models import *
 from .signals import *
 from .xpath import *
-from . import NGC_ORDER_SUBMIT_URL
 
 logger = logging.getLogger('django.request')
 xmlns = 'http://checkout.google.com/schema/2'
@@ -45,10 +44,10 @@ class OrderSubmitView(RedirectView):
             }
         xml = self.backend.get_order_submit_xml()
 
-        request = urllib2.Request(NGC_ORDER_SUBMIT_URL, headers=headers)
-        request.add_data(xml)
+        req = urllib2.Request(settings.NGC_ORDER_SUBMIT_URL, headers=headers)
+        req.add_data(xml)
 
-        handle = urllib2.urlopen(request, timeout=settings.NGC_HTTP_TIMEOUT)
+        handle = urllib2.urlopen(req, timeout=settings.NGC_HTTP_TIMEOUT)
         self.gc_raw_post_data = handle.read()
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
@@ -63,10 +62,7 @@ class OrderSubmitView(RedirectView):
     def post(self, request, *args, **kwargs):
         backend_class = get_backend_class(settings.NGC_BACKEND)
         self.backend = backend_class(request)
-        if not self.backend.has_cart():
-            raise Http404("User has no cart")
-
-        cart = self.backend.get_cart(),
+        cart = self.backend.get_cart()
         redirect_url = self.get_redirect_url()
         resp = super(OrderSubmitView, self).get(request, *args, **kwargs)
 
@@ -100,9 +96,9 @@ class NotificationListenerView(TemplateView):
         self.serial_number = notify_xml.get('serial-number')
         self.order_number = long(notify_xml.findtext(xpq_order_number))
 
-        cart_id = notify_xml.findtext(xpq_merchant_private_data)
+        private_data = notify_xml.findtext(xpq_merchant_private_data)
         backend_class = get_backend_class(settings.NGC_BACKEND)
-        self.backend = backend_class(request, cart_id=cart_id)
+        self.backend = backend_class(request, private_data=private_data)
         self.cart = self.backend.get_cart()
 
         logger.info(

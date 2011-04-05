@@ -37,13 +37,6 @@ class NotificationTests(TestCase):
         join(data_dir, 'order-state-change-notification_3-charging-charged.xml')
     charge_amount_path = join(data_dir, 'charge-amount-notification.xml')
 
-    # extracting data from those files
-    xmlns = 'http://checkout.google.com/schema/2'
-    xpq_order_number = '{{{0}}}google-order-number'.format(xmlns)
-    xpq_timestamp = '{{{0}}}timestamp'.format(xmlns)
-    xpq_total_charge_amount= '{{{0}}}total-charge-amount'.format(xmlns)
-
-
     # FIXME: a good way to test csrf stuff? client should
     #        not send any csrf tokens
 
@@ -78,13 +71,6 @@ class NotificationTests(TestCase):
         self.charge_amount_timestamp = self._extract_timestamp(ca_xml)
         self.total_charge_amount = \
             Decimal(ca_xml.findtext(xpq_total_charge_amount))
-
-    def _extract_timestamp(self, notify_xml):
-        """Extract the timestamp, converted to the local timezone"""
-        ts_utc = dt_parse(notify_xml.findtext(xpq_timestamp))
-        ts_local = ts_utc - timedelta(seconds=time.timezone)
-        ts_local = ts_local.replace(tzinfo=None)
-        return ts_local
 
     def test_basic(self):
         """
@@ -144,3 +130,10 @@ class NotificationTests(TestCase):
         self.assertEqual(go.last_notify_dt, timestamp)
 
         return response, go
+
+    def _extract_timestamp(self, notify_xml):
+        """Extract the timestamp, converted to the local timezone"""
+        ts_utc = dt_parse(notify_xml.findtext(xpq_timestamp))
+        ts_local = ts_utc - timedelta(seconds=time.timezone)
+        ts_local = ts_local.replace(tzinfo=None)
+        return ts_local

@@ -7,9 +7,10 @@ class FileRequestHandler(logging.FileHandler):
     """
     def emit(self, record):
         raw_post_data = None
-        if record.request:
+        if hasattr(record, 'request') and \
+                hasattr(record.request, 'raw_post_data'):
             raw_post_data = record.request.raw_post_data
-        if record.raw_post_data:
+        if hasattr(record, 'raw_post_data'):
             raw_post_data = record.raw_post_data
 
         if raw_post_data:
