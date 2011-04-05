@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkout-redirect xmlns="http://checkout.google.com/schema/2" serial-number="3fa00624-86b1-4526-bcca-451a29777b46">
+  <redirect-url>https://sandbox.google.com/checkout/view/donations/buy?o=shoppingcart&amp;shoppingcart=246598663255221</redirect-url>
+</checkout-redirect>

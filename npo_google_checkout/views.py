@@ -49,9 +49,10 @@ class OrderSubmitView(RedirectView):
         request.add_data(xml)
 
         handle = urllib2.urlopen(request, timeout=settings.NGC_HTTP_TIMEOUT)
+        self.gc_raw_post_data = handle.read()
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
-            redirect_xml = XML(handle.read())
+            redirect_xml = XML(self.gc_raw_post_data)
             redirect_url = redirect_xml.find(xpq_redirect_url).text;
             self.serial_number = redirect_xml.get('serial-number')
         except:
@@ -61,7 +62,7 @@ class OrderSubmitView(RedirectView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         backend_class = get_backend_class(settings.NGC_BACKEND)
-        self.backend = backend_class(request, cart_id=self.cart_id)
+        self.backend = backend_class(request)
         if not self.backend.has_cart():
             raise Http404("User has no cart")
 
@@ -70,12 +71,12 @@ class OrderSubmitView(RedirectView):
         resp = super(OrderSubmitView, self).get(request, *args, **kwargs)
 
         logger.info(
-            "GC order-redirect #{1} received.".format(self.serial_number),
-            extra={'request': request})
+            "GC order-redirect #{0} received.".format(self.serial_number),
+            extra={'request': request, 'raw_post_data': self.gc_raw_post_data})
 
         OrderSubmitRedirect.objects.create(
                 cart=cart, redirect_url=redirect_url)
-        order_submit.send(self, cart=self.cart, redirect_url=redirect_url)
+        order_submit.send(self, cart=cart, redirect_url=redirect_url)
         return resp
 
 
