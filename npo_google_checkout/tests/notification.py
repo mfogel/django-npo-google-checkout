@@ -88,34 +88,42 @@ class NotificationTests(TestCase):
         """
 
         res, go = self._base_notification(self.new_order_path,
-                GoogleOrder.REVIEWING_STATE, self.new_order_timestamp)
+                GoogleOrder.REVIEWING_STATE, GoogleOrder.NEW_ORDER_NOTIFY_TYPE,
+                self.new_order_timestamp)
         self.assertEqual(go.dt_init, self.new_order_timestamp)
 
         res, go = self._base_notification(self.order_state_change_1_path,
                 GoogleOrder.CHARGEABLE_STATE,
+                GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
                 self.order_state_change_1_timestamp)
 
         res, go = self._base_notification(self.risk_information_path,
                 GoogleOrder.CHARGEABLE_STATE,
+                GoogleOrder.RISK_INFORMATION_NOTIFY_TYPE,
                 self.risk_information_timestamp)
 
         res, go = self._base_notification(self.authorization_amount_path,
                 GoogleOrder.CHARGEABLE_STATE,
+                GoogleOrder.AUTHORIZATION_AMOUNT_NOTIFY_TYPE,
                 self.authorization_amount_timestamp)
 
         res, go = self._base_notification(self.order_state_change_2_path,
                 GoogleOrder.CHARGING_STATE,
+                GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
                 self.order_state_change_2_timestamp)
 
         res, go = self._base_notification(self.order_state_change_3_path,
                 GoogleOrder.CHARGED_STATE,
+                GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
                 self.order_state_change_3_timestamp)
 
         res, go = self._base_notification(self.charge_amount_path,
                 GoogleOrder.CHARGED_STATE,
+                GoogleOrder.CHARGE_AMOUNT_NOTIFY_TYPE,
                 self.charge_amount_timestamp)
 
-    def _base_notification(self, test_xml_path, new_state, timestamp):
+    def _base_notification(self,
+            test_xml_path, new_state, new_notify_type, timestamp):
         xml = open(join(test_xml_path)).read()
         serial_number = XML(xml).get('serial-number')
         response = self.client.post_notification(self.path, xml)
@@ -125,6 +133,7 @@ class NotificationTests(TestCase):
         go = GoogleOrder.objects.get()
         self.assertEqual(go.number, self.order_number)
         self.assertEqual(go.state, new_state)
+        self.assertEqual(go.last_notify_type, new_notify_type)
         self.assertEqual(go.last_notify_dt, timestamp)
 
         return response, go
