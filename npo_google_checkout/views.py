@@ -1,6 +1,7 @@
 import base64
 from datetime import timedelta
 from dateutil.parser import parse as dt_parse
+from decimal import Decimal
 import logging
 import time
 import urllib, urllib2
@@ -184,9 +185,10 @@ class NotificationListenerView(TemplateView):
                 authorization_amount=auth_amount)
 
     def _post_charge_amount(self, order, notify_xml):
+        order.amount_charged = \
+            Decimal(notify_xml.find(self.xpq_total_charge_amount).text)
         order.save()
         latest_amount = notify_xml.find(self.xpq_latest_charge_amount).text
-        total_amount = notify_xml.find(self.xpq_total_charge_amount).text
         notification_risk_information.send(self,
                 cart=self.cart, order=order,
-                latest_amount=latest_amount, total_amount=total_amount)
+                latest_amount=latest_amount, total_amount=order.amount_charged)

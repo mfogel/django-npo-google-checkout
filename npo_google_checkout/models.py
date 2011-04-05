@@ -74,6 +74,8 @@ class GoogleOrder(models.Model):
     number = models.BigIntegerField(_('Number'), db_index=True)
     state = models.PositiveSmallIntegerField(_('State'),
             choices=STATE_CHOICES, default=REVIEWING_STATE)
+    amount_charged = models.DecimalField(_('Amount Charged'),
+            max_digits=8, decimal_places=2, default=0)
     dt_init = models.DateTimeField(_('DateTime Initialized'))
 
     last_notify_type = models.PositiveSmallIntegerField(

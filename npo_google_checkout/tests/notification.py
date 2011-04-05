@@ -4,6 +4,7 @@ Tests for the notifcation API.
 
 from datetime import datetime, timedelta
 from dateutil.parser import parse as dt_parse
+from decimal import Decimal
 from os.path import dirname, join
 import time
 from xml.etree.ElementTree import XML
@@ -39,6 +40,7 @@ class NotificationTests(TestCase):
     xmlns = 'http://checkout.google.com/schema/2'
     xpq_order_number = '{{{0}}}google-order-number'.format(xmlns)
     xpq_timestamp = '{{{0}}}timestamp'.format(xmlns)
+    xpq_total_charge_amount= '{{{0}}}total-charge-amount'.format(xmlns)
 
 
     # FIXME: a good way to test csrf stuff? client should
@@ -73,6 +75,7 @@ class NotificationTests(TestCase):
 
         ca_xml = XML(open(join(self.charge_amount_path)).read())
         self.charge_amount_timestamp = self._extract_timestamp(ca_xml)
+        self.total_charge_amount = Decimal(ca_xml.find(self.xpq_total_charge_amount).text)
 
     def _extract_timestamp(self, notify_xml):
         """Extract the timestamp, converted to the local timezone"""
@@ -91,6 +94,7 @@ class NotificationTests(TestCase):
                 GoogleOrder.REVIEWING_STATE, GoogleOrder.NEW_ORDER_NOTIFY_TYPE,
                 self.new_order_timestamp)
         self.assertEqual(go.dt_init, self.new_order_timestamp)
+        self.assertEqual(go.amount_charged, 0)
 
         res, go = self._base_notification(self.order_state_change_1_path,
                 GoogleOrder.CHARGEABLE_STATE,
@@ -121,6 +125,7 @@ class NotificationTests(TestCase):
                 GoogleOrder.CHARGED_STATE,
                 GoogleOrder.CHARGE_AMOUNT_NOTIFY_TYPE,
                 self.charge_amount_timestamp)
+        self.assertEqual(go.amount_charged, self.total_charge_amount)
 
     def _base_notification(self,
             test_xml_path, new_state, new_notify_type, timestamp):
