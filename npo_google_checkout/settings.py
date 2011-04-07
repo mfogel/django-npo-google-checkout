@@ -22,5 +22,4 @@ NGC_HTTP_TIMEOUT = 5
 # make sure to override with a sandbox url during developement
 # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#integration_overview
 # Note: the example curl commands in that document are wrong (as of 2011/4/5)
-NGC_API_BASE_URL = \
-    'https://checkout.google.com/api/checkout/v2/request/Merchant'
+NGC_API_BASE_URL = 'https://checkout.google.com/api/checkout/v2'

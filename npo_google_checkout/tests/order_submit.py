@@ -29,8 +29,8 @@ class OrderSubmitTests(TestCase):
 
         checkout_redirect_xml_path = \
             OrderSubmitView.order_submit_frmt_str.format(
-                api_base_url=self.data_dir,
-                merchant_key=self.checkout_redirect_fn)
+                NGC_API_BASE_URL=self.data_dir,
+                NGC_MERCHANT_ID=self.checkout_redirect_fn)
 
         cr_xml = XML(open(join(checkout_redirect_xml_path)).read())
         self.serial_number = cr_xml.get('serial-number')

@@ -28,12 +28,15 @@ xmlns = 'http://checkout.google.com/schema/2'
 
 class OrderSubmitView(RedirectView):
     permanent = False
-    order_submit_frmt_str = '{api_base_url}/Donations/{merchant_key}'
+    order_submit_frmt_str = \
+        '{NGC_API_BASE_URL}/merchantCheckout/Donations/{NGC_MERCHANT_ID}'
 
-    def get(self, *args, **kwargs):
-        raise Http404("GET method not allowed.")
-
-    def get_redirect_url(self, **kwagrs):
+    @staticmethod
+    def syncronous_gc_request(url, data):
+        """
+        Seperating this out as a seperate function so communication with
+        google checkout can be tested seperately.
+        """
         # example:
         # http://code.google.com/p/chippysshop/source/browse/googlecheckout.py
         auth_string = 'Basic {0}'.format(base64.b64encode(
@@ -43,16 +46,22 @@ class OrderSubmitView(RedirectView):
                 'Accept': 'application/xml; charset=UTF-8',
                 'Authorization': auth_string,
             }
-        xml = self.backend.get_order_submit_xml()
 
-        order_submit_url = self.order_submit_frmt_str.format(
-                api_base_url=settings.NGC_API_BASE_URL,
-                merchant_key=settings.NGC_MERCHANT_ID)
-
-        req = urllib2.Request(order_submit_url, headers=headers)
-        req.add_data(xml)
+        req = urllib2.Request(url, headers=headers)
+        req.add_data(data)
         handle = urllib2.urlopen(req, timeout=settings.NGC_HTTP_TIMEOUT)
-        self.gc_raw_post_data = handle.read()
+        response_data = handle.read()
+        return response_data
+
+    def get(self, *args, **kwargs):
+        raise Http404("GET method not allowed.")
+
+    def get_redirect_url(self, **kwagrs):
+        url = self.order_submit_frmt_str.format(
+                NGC_API_BASE_URL=settings.NGC_API_BASE_URL,
+                NGC_MERCHANT_ID=settings.NGC_MERCHANT_ID)
+        xml = self.backend.get_order_submit_xml()
+        self.gc_raw_post_data = self.syncronous_gc_request(url, xml)
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
             redirect_xml = XML(self.gc_raw_post_data)
