@@ -9,8 +9,8 @@ from os.path import dirname, join
 import time
 from xml.etree.ElementTree import XML
 
-from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from .google_checkout_client import GCClient
@@ -24,18 +24,21 @@ class NotificationTests(TestCase):
     client_class = GCClient
 
     # The data files, in the same order as GC sandbox sends them out:
-    data_dir = join(dirname(__file__), 'data')
-    new_order_path = join(data_dir, 'new-order-notification.xml')
+    data_dir = join(dirname(__file__), 'data', 'notification')
+    new_order_path = \
+            join(data_dir, 'new-order.xml')
     order_state_change_1_path = \
-        join(data_dir, 'order-state-change-notification_1-reviewing-chargeable.xml')
-    risk_information_path = join(data_dir, 'risk-information-notification.xml')
+            join(data_dir, 'order-state-change_1-reviewing-chargeable.xml')
+    risk_information_path = \
+            join(data_dir, 'risk-information.xml')
     authorization_amount_path = \
-        join(data_dir, 'authorization-amount-notification.xml')
+            join(data_dir, 'authorization-amount.xml')
     order_state_change_2_path = \
-        join(data_dir, 'order-state-change-notification_2-chargeable-charging.xml')
+            join(data_dir, 'order-state-change_2-chargeable-charging.xml')
     order_state_change_3_path = \
-        join(data_dir, 'order-state-change-notification_3-charging-charged.xml')
-    charge_amount_path = join(data_dir, 'charge-amount-notification.xml')
+            join(data_dir, 'order-state-change_3-charging-charged.xml')
+    charge_amount_path = \
+            join(data_dir, 'charge-amount.xml')
 
     # FIXME: a good way to test csrf stuff? client should
     #        not send any csrf tokens

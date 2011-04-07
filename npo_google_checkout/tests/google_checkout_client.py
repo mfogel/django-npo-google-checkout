@@ -12,10 +12,3 @@ class GCClient(Client):
         """
         content_type = "application/xml; charset=UTF-8"
         return self.post(path, data=raw_post_data, content_type=content_type)
-
-
-
-    
-
-
-

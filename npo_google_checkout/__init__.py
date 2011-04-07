@@ -1,5 +1,6 @@
 """
-Using thsutton's approach to application-specfic default settings.
+thsutton's approach to application-specfic default settings, with
+minor modifications.
 https://github.com/thsutton/django-application-settings/
 
 LICENSE FOR CODE IN THIS FILE:
@@ -37,29 +38,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
-def inject_app_defaults(application):
+from sys import modules
+
+def inject_application_default_settings(application):
     """Inject an application's default settings"""
 
     try:
         __import__('%s.settings' % application)
-        import sys
 
         # Import our defaults, project defaults, and project settings
-        _app_settings = sys.modules['%s.settings' % application]
-        _def_settings = sys.modules['django.conf.global_settings']
-        _settings = sys.modules['django.conf'].settings
+        app_settings = modules['%s.settings' % application]
+        def_settings = modules['django.conf.global_settings']
+        settings = modules['django.conf'].settings
 
         # Add the values from the application.settings module
-        for _k in dir(_app_settings):
-            if _k.isupper():
+        for k in dir(app_settings):
+            if k.isupper():
+                name = k
+                value = getattr(app_settings, name)
+
                 # Add the value to the default settings module
-                setattr(_def_settings, _k, getattr(_app_settings, _k))
+                setattr(def_settings, name, value)
 
                 # Add the value to the settings, if not already present
-                if not hasattr(_settings, _k):
-                    setattr(_settings, _k, getattr(_app_settings, _k))
+                if not hasattr(settings, name):
+                    setattr(settings, name, value)
+
     except ImportError:
         # Silently skip failing settings modules
         pass
 
-inject_app_defaults(__name__)
+inject_application_default_settings(__name__)

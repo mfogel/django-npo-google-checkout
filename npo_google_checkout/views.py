@@ -28,6 +28,7 @@ xmlns = 'http://checkout.google.com/schema/2'
 
 class OrderSubmitView(RedirectView):
     permanent = False
+    order_submit_frmt_str = '{api_base_url}/Donations/{merchant_key}'
 
     def get(self, *args, **kwargs):
         raise Http404("GET method not allowed.")
@@ -44,9 +45,12 @@ class OrderSubmitView(RedirectView):
             }
         xml = self.backend.get_order_submit_xml()
 
-        req = urllib2.Request(settings.NGC_ORDER_SUBMIT_URL, headers=headers)
-        req.add_data(xml)
+        order_submit_url = self.order_submit_frmt_str.format(
+                api_base_url=settings.NGC_API_BASE_URL,
+                merchant_key=settings.NGC_MERCHANT_ID)
 
+        req = urllib2.Request(order_submit_url, headers=headers)
+        req.add_data(xml)
         handle = urllib2.urlopen(req, timeout=settings.NGC_HTTP_TIMEOUT)
         self.gc_raw_post_data = handle.read()
         try:

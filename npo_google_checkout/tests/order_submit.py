@@ -11,19 +11,28 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from ..models import OrderSubmitRedirect
+from ..views import OrderSubmitView
 from ..xpath import xpq_redirect_url
 
 
 class OrderSubmitTests(TestCase):
-    data_dir = join(dirname(__file__), 'data')
-    checkout_redirect_xml_path = join(data_dir, 'checkout-redirect.xml')
+    data_dir = join(dirname(__file__), 'data', 'order_submit')
+    checkout_redirect_fn = 'checkout-redirect.xml'
 
     def setUp(self):
         self.path = reverse('ngc-order-submit')
-        settings.NGC_ORDER_SUBMIT_URL = \
-            'file://{0}'.format(self.checkout_redirect_xml_path)
 
-        cr_xml = XML(open(join(self.checkout_redirect_xml_path)).read())
+        # semi-hacky. get the order-submit requiest to hit the file on disk
+        # see use of 'order_submit_url' in views.py
+        settings.NGC_API_BASE_URL = 'file://{0}'.format(self.data_dir)
+        settings.NGC_MERCHANT_ID = self.checkout_redirect_fn
+
+        checkout_redirect_xml_path = \
+            OrderSubmitView.order_submit_frmt_str.format(
+                api_base_url=self.data_dir,
+                merchant_key=self.checkout_redirect_fn)
+
+        cr_xml = XML(open(join(checkout_redirect_xml_path)).read())
         self.serial_number = cr_xml.get('serial-number')
         self.redirect_url = cr_xml.find(xpq_redirect_url).text
 
