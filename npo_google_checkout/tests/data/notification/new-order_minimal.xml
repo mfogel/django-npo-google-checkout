@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<new-order-notification xmlns="http://checkout.google.com/schema/2" serial-number="851016492334813-00001-7">
+  <buyer-billing-address>
+    <email>devnull@gmail.com</email>
+    <contact-name>Sandy Sandbox</contact-name>
+    <company-name></company-name>
+    <phone>415 229-0303</phone>
+    <fax></fax>
+    <address1>111 R Road</address1>
+    <address2></address2>
+    <structured-name>
+      <first-name>Sandy</first-name>
+      <last-name>Sandbox</last-name>
+    </structured-name>
+    <city>San Francisco</city>
+    <region>CA</region>
+    <postal-code>94117</postal-code>
+    <country-code>US</country-code>
+  </buyer-billing-address>
+  <timestamp>2011-04-02T01:34:18.793Z</timestamp>
+  <google-order-number>851016492334813</google-order-number>
+  <order-summary>
+    <total-chargeback-amount currency="USD">0.0</total-chargeback-amount>
+    <google-order-number>851016492334813</google-order-number>
+    <total-charge-amount currency="USD">0.0</total-charge-amount>
+    <total-refund-amount currency="USD">0.0</total-refund-amount>
+    <purchase-date>2011-04-02T01:34:18.000Z</purchase-date>
+    <archived>false</archived>
+    <shopping-cart>
+      <items>
+        <item>
+          <item-name>example item name</item-name>
+          <item-description>example item description</item-description>
+          <unit-price currency="USD">42.42</unit-price>
+          <quantity>1</quantity>
+        </item>
+      </items>
+    </shopping-cart>
+    <order-adjustment>
+      <merchant-codes />
+      <total-tax currency="USD">0.0</total-tax>
+      <adjustment-total currency="USD">0.0</adjustment-total>
+    </order-adjustment>
+    <buyer-id>651989437493507</buyer-id>
+    <promotions />
+    <buyer-shipping-address>
+      <email>devnull@gmail.com</email>
+      <contact-name>Sandy Sandbox</contact-name>
+      <company-name></company-name>
+      <phone>415 229-0303</phone>
+      <fax></fax>
+      <address1>111 R Road</address1>
+      <address2></address2>
+      <structured-name>
+        <first-name>Sandy</first-name>
+        <last-name>Sandbox</last-name>
+      </structured-name>
+      <city>San Francisco</city>
+      <region>CA</region>
+      <postal-code>94117</postal-code>
+      <country-code>US</country-code>
+    </buyer-shipping-address>
+    <buyer-marketing-preferences>
+      <email-allowed>true</email-allowed>
+    </buyer-marketing-preferences>
+    <order-total currency="USD">42.42</order-total>
+    <fulfillment-order-state>NEW</fulfillment-order-state>
+    <financial-order-state>REVIEWING</financial-order-state>
+  </order-summary>
+  <shopping-cart>
+    <items>
+      <item>
+        <item-name>example item name</item-name>
+        <item-description>example item descriptionriptions</item-description>
+        <unit-price currency="USD">42.42</unit-price>
+        <quantity>1</quantity>
+      </item>
+    </items>
+  </shopping-cart>
+  <order-adjustment>
+    <merchant-codes />
+    <total-tax currency="USD">0.0</total-tax>
+    <adjustment-total currency="USD">0.0</adjustment-total>
+  </order-adjustment>
+  <buyer-id>651989437493507</buyer-id>
+  <promotions />
+  <buyer-shipping-address>
+    <email>devnull@gmail.com</email>
+    <contact-name>Sandy Sandbox</contact-name>
+    <company-name></company-name>
+    <phone>415 229-0303</phone>
+    <fax></fax>
+    <address1>111 R Road</address1>
+    <address2></address2>
+    <structured-name>
+      <first-name>Sandy</first-name>
+      <last-name>Sandbox</last-name>
+    </structured-name>
+    <city>San Francisco</city>
+    <region>CA</region>
+    <postal-code>94117</postal-code>
+    <country-code>US</country-code>
+  </buyer-shipping-address>
+  <buyer-marketing-preferences>
+    <email-allowed>true</email-allowed>
+  </buyer-marketing-preferences>
+  <order-total currency="USD">42.42</order-total>
+  <fulfillment-order-state>NEW</fulfillment-order-state>
+  <financial-order-state>REVIEWING</financial-order-state>
+</new-order-notification>

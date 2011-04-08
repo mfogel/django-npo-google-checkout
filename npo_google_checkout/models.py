@@ -69,15 +69,17 @@ class GoogleOrder(models.Model):
         return None
 
     cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
+
     # FIXME: no PositiveBigIntegerField ?
-    number = models.BigIntegerField(_('Number'), db_index=True)
+    number = models.BigIntegerField(_('Number'), unique=True, db_index=True)
+    dt_init = models.DateTimeField(_('DateTime Initialized'))
+    dt_expires = models.DateTimeField(_('DateTime Expires'),
+            blank=True, null=True)
+
     state = models.PositiveSmallIntegerField(_('State'),
             choices=STATE_CHOICES, default=REVIEWING_STATE)
     amount_charged = models.DecimalField(_('Amount Charged'),
             max_digits=8, decimal_places=2, default=0)
-    dt_init = models.DateTimeField(_('DateTime Initialized'))
-    dt_expires = models.DateTimeField(_('DateTime Expires'),
-            blank=True, null=True)
 
     last_notify_type = models.PositiveSmallIntegerField(
             _('Last Notification Type'),

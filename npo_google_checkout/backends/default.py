@@ -100,7 +100,7 @@ class DefaultBackend(object):
         <checkout-shopping-cart xmlns="http://checkout.google.com/schema/2">
             <shopping-cart>
                 {{ items_xml }}
-                <merchant-private-data>{{ private_data }}</merchant-private-data>
+                {% if private_data %}<merchant-private-data>{{ private_data }}</merchant-private-data>{% endif %}
                 {% if cart_expiration %}<cart-expiration><good-until-date>{{ cart_expiration }}</good-until-date></cart-expiration>{% endif %}
             </shopping-cart>
             <checkout-flow-support>
