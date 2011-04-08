@@ -1,30 +1,40 @@
 """
-thsutton's approach to application-specfic default settings, with
-minor modifications.
-https://github.com/thsutton/django-application-settings/
+Default django-npo-google-checkout settings.
+
+All django-npo-google-checkout settings begin with the prefix 'NGC_'. For
+example, a minimal configuration in your project's settings file:
+
+NGC_CART_MODEL = 'my_shopping_cart_app.cart'
+NGC_MERCHANT_ID = 42424242424242424242424242 # given to you by google checkout
+NGC_MERCHANT_KEY = 'secret-key-lives-here!!' # given to you by google checkout
+
 """
+
+from django.conf import settings
 
 # NGC_BACKEND class interfaces django-npo-google-checkout to your system
 # recommended to override the default with your own
-NGC_BACKEND = 'npo_google_checkout.backends.default.DefaultBackend'
+BACKEND = getattr(settings, 'NGC_BACKEND',
+        'npo_google_checkout.backends.default.DefaultBackend')
 
 # Required: NGC_CART_MOOEL identifies DB model that represents your cart
-NGC_CART_MODEL = None
+CART_MODEL = settings.NGC_CART_MODEL
 
 # Required: google checkout provides you want a merchant id & key
-NGC_MERCHANT_ID = None
-NGC_MERCHANT_KEY = None
+MERCHANT_ID = settings.NGC_MERCHANT_ID
+MERCHANT_KEY = settings.NGC_MERCHANT_KEY
 
 # try for NGC_HTTP_TIMEOUT seconds to connect to GC before timing out.
 # on order submit redirect, user will be waiting for this real-time
-NGC_HTTP_TIMEOUT = 5
+HTTP_TIMEOUT = getattr(settings, 'NGC_HTTP_TIMEOUT', 5)
 
 # make sure to override with a sandbox url during developement
 # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#integration_overview
 # Note: the example curl commands in that document are wrong (as of 2011/4/5)
-NGC_API_BASE_URL = 'https://checkout.google.com/api/checkout/v2'
+API_BASE_URL = getattr(settings, 'NGC_API_BASE_URL',
+        'https://checkout.google.com/api/checkout/v2')
 
 # how long we give someone to complete their checkout process
 # accepted fields: 'days', 'seconds', etc.
 # http://docs.python.org/library/datetime.html#datetime.timedelta
-NGC_ORDER_EXPIRE = {'days': 1}
+ORDER_EXPIRE = getattr(settings, 'NGC_ORDER_EXPIRE', {'days': 1})

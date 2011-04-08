@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 
-from django.conf import settings
 from django.template import Context, Template
 from django.utils.safestring import mark_safe
+
+from .. import settings as ngc_settings
 
 
 class DefaultBackend(object):
@@ -54,7 +55,7 @@ class DefaultBackend(object):
 
         """Extract the timestamp, converted to the local timezone"""
         utc_now = datetime.utcnow()
-        expire_delta = timedelta(**settings.NGC_ORDER_EXPIRE)
+        expire_delta = timedelta(**ngc_settings.ORDER_EXPIRE)
         utc_expire = utc_now + expire_delta
         str_rep = utc_expire.replace(microsecond=0).isoformat() + 'Z'
         return str_rep

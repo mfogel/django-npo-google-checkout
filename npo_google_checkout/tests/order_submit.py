@@ -6,10 +6,10 @@ from datetime import datetime
 from os.path import dirname, join
 from xml.etree.ElementTree import XML
 
-from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
+from .. import settings as ngc_settings
 from ..models import OrderSubmitRedirect
 from ..views import OrderSubmitView
 from ..xpath import xpq_redirect_url
@@ -24,8 +24,8 @@ class OrderSubmitTests(TestCase):
 
         # semi-hacky. get the order-submit requiest to hit the file on disk
         # see use of 'order_submit_url' in views.py
-        settings.NGC_API_BASE_URL = 'file://{0}'.format(self.data_dir)
-        settings.NGC_MERCHANT_ID = self.checkout_redirect_fn
+        ngc_settings.API_BASE_URL = 'file://{0}'.format(self.data_dir)
+        ngc_settings.MERCHANT_ID = self.checkout_redirect_fn
 
         checkout_redirect_xml_path = \
             OrderSubmitView.order_submit_frmt_str.format(

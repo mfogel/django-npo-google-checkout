@@ -1,14 +1,14 @@
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
+from . import settings as ngc_settings
 from .signals import order_submit
 
 
 class OrderSubmitRedirect(models.Model):
-    cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
+    cart = models.ForeignKey(ngc_settings.CART_MODEL, blank=True, null=True)
     redirect_url = models.URLField(_('Redirect URL'))
     dt = models.DateTimeField(_('DateTime'), auto_now_add=True)
 
@@ -68,7 +68,7 @@ class GoogleOrder(models.Model):
                 return pair[0]
         return None
 
-    cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
+    cart = models.ForeignKey(ngc_settings.CART_MODEL, blank=True, null=True)
 
     # FIXME: no PositiveBigIntegerField ?
     number = models.BigIntegerField(_('Number'), unique=True, db_index=True)

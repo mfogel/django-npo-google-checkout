@@ -1,13 +1,12 @@
 import base64
-from datetime import timedelta
-from dateutil.parser import parse as dt_parse
-from decimal import Decimal
 import logging
 import time
 import urllib, urllib2
+from datetime import timedelta
+from dateutil.parser import parse as dt_parse
+from decimal import Decimal
 from xml.etree.ElementTree import XML
 
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import Http404, HttpResponseServerError
 from django.utils.decorators import method_decorator
@@ -15,8 +14,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView, TemplateView
 from django.views.decorators.csrf import csrf_exempt
 
+# TODO: remove this dependency
 from signup_login.decorators import login_required
 
+from . import settings as ngc_settings
 from .backends import get_backend_class
 from .models import *
 from .signals import *
@@ -40,7 +41,7 @@ class OrderSubmitView(RedirectView):
         # example:
         # http://code.google.com/p/chippysshop/source/browse/googlecheckout.py
         auth_string = 'Basic {0}'.format(base64.b64encode(
-            settings.NGC_MERCHANT_ID + ':' + settings.NGC_MERCHANT_KEY))
+            ngc_settings.MERCHANT_ID + ':' + ngc_settings.MERCHANT_KEY))
         headers = {
                 'Content-Type': 'application/xml; charset=UTF-8',
                 'Accept': 'application/xml; charset=UTF-8',
@@ -49,7 +50,7 @@ class OrderSubmitView(RedirectView):
 
         req = urllib2.Request(url, headers=headers)
         req.add_data(data)
-        handle = urllib2.urlopen(req, timeout=settings.NGC_HTTP_TIMEOUT)
+        handle = urllib2.urlopen(req, timeout=ngc_settings.HTTP_TIMEOUT)
         response_data = handle.read()
         return response_data
 
@@ -58,8 +59,8 @@ class OrderSubmitView(RedirectView):
 
     def get_redirect_url(self, **kwagrs):
         url = self.order_submit_frmt_str.format(
-                NGC_API_BASE_URL=settings.NGC_API_BASE_URL,
-                NGC_MERCHANT_ID=settings.NGC_MERCHANT_ID)
+                NGC_API_BASE_URL=ngc_settings.API_BASE_URL,
+                NGC_MERCHANT_ID=ngc_settings.MERCHANT_ID)
         xml = self.backend.get_order_submit_xml()
         self.gc_raw_post_data = self.syncronous_gc_request(url, xml)
         try:
@@ -73,7 +74,7 @@ class OrderSubmitView(RedirectView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        backend_class = get_backend_class(settings.NGC_BACKEND)
+        backend_class = get_backend_class(ngc_settings.BACKEND)
         self.backend = backend_class(request)
         cart = self.backend.get_cart()
         redirect_url = self.get_redirect_url()
@@ -113,7 +114,7 @@ class NotificationListenerView(TemplateView):
         self.order_number = long(notify_xml.findtext(xpq_order_number))
 
         private_data = notify_xml.findtext(xpq_merchant_private_data)
-        backend_class = get_backend_class(settings.NGC_BACKEND)
+        backend_class = get_backend_class(ngc_settings.BACKEND)
         self.backend = backend_class(request, private_data=private_data)
         self.cart = self.backend.get_cart()
 

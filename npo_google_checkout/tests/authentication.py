@@ -6,9 +6,9 @@ Does a 'hello' command with authentication, see if we get the proper resp.
 
 from xml.etree.ElementTree import XML
 
-from django.conf import settings
 from django.test import TestCase
 
+from .. import settings as ngc_settings
 from ..views import OrderSubmitView
 from ..xpath import xmlns
 
@@ -27,8 +27,8 @@ class AuthenticationTests(TestCase):
         """
 
         url = self.url_frmt_str.format(
-                NGC_API_BASE_URL=settings.NGC_API_BASE_URL,
-                NGC_MERCHANT_ID=settings.NGC_MERCHANT_ID)
+                NGC_API_BASE_URL=ngc_settings.API_BASE_URL,
+                NGC_MERCHANT_ID=ngc_settings.MERCHANT_ID)
         data = self.request_frmt_str.format(xmlns=xmlns)
 
         response_data = OrderSubmitView.syncronous_gc_request(url, data)

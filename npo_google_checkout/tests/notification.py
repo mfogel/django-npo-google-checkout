@@ -2,20 +2,20 @@
 Tests for the notification API.
 """
 
+import time
 from datetime import datetime, timedelta
 from dateutil.parser import parse as dt_parse
 from decimal import Decimal
 from os.path import dirname, join
-import time
 from xml.etree.ElementTree import XML
 
-from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from .google_checkout_client import GCClient
+from .. import settings as ngc_settings
 from ..models import GoogleOrder
 from ..xpath import *
+from .google_checkout_client import GCClient
 
 RESPONSE_FRMT_STR = """<notification-acknowledgment xmlns="http://checkout.google.com/schema/2" serial-number="{serial_number}" />"""
 
@@ -35,7 +35,7 @@ class NotificationTestsMixin(object):
 
     def setUp(self):
         self.url = reverse('ngc-notification-listener')
-        settings.NGC_BACKEND = \
+        ngc_settings.BACKEND = \
             'npo_google_checkout.backends.default.DefaultBackend'
 
     def _base_notification(self, test_xml_fn):
