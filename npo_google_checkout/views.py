@@ -7,15 +7,13 @@ from dateutil.parser import parse as dt_parse
 from decimal import Decimal
 from xml.etree.ElementTree import XML
 
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ImproperlyConfigured
 from django.http import Http404, HttpResponseServerError
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import RedirectView, TemplateView
 from django.views.decorators.csrf import csrf_exempt
-
-# TODO: remove this dependency
-from signup_login.decorators import login_required
 
 from . import settings as ngc_settings
 from .backends import get_backend_class
