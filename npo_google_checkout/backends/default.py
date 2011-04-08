@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.template import Context, Template
 from django.utils.safestring import mark_safe
 
@@ -42,6 +45,20 @@ class DefaultBackend(object):
         """
         return None
 
+    def get_order_expiration(self):
+        """
+        When GC should expire the given cart.
+        http://code.google.com/apis/checkout/developer/Google_Checkout_XML_Donation_API_Notification_API.html#tag_good-until-date
+        By default, return now + NGC_ORDER_EXPIRE in a format google can take
+        """
+
+        """Extract the timestamp, converted to the local timezone"""
+        utc_now = datetime.utcnow()
+        expire_delta = timedelta(**settings.NGC_ORDER_EXPIRE)
+        utc_expire = utc_now + expire_delta
+        str_rep = utc_expire.replace(microsecond=0).isoformat() + 'Z'
+        return str_rep
+
     def _get_items_xml(self):
         """
         The items in the shopping cart GC should present the user for review.
@@ -73,6 +90,7 @@ class DefaultBackend(object):
         return Context({
                 'cs_url': self.get_continue_shopping_url(),
                 'ec_url': self.get_edit_cart_url(),
+                'order_expiration': self.get_order_expiration(),
                 'items_xml': self._get_items_xml(),
                 'private_data': self._get_merchant_private_data(),
             })
@@ -83,6 +101,7 @@ class DefaultBackend(object):
             <shopping-cart>
                 {{ items_xml }}
                 <merchant-private-data>{{ private_data }}</merchant-private-data>
+                {% if order_expiration %}<order-expiration><good-until-date>{{ order_expiration }}</good-until-date></order-expiration>{% endif %}
             </shopping-cart>
             <checkout-flow-support>
                 <merchant-checkout-flow-support>
