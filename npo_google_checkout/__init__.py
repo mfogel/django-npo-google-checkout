@@ -38,6 +38,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
+# TODO:
+#   this fails if the setting is not defined in the user's orginial
+#   settings.py
+#   I guess that means this doesn't really work at all.
+
 from sys import modules
 
 def inject_application_default_settings(application):

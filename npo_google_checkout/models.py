@@ -78,6 +78,8 @@ class GoogleOrder(models.Model):
     amount_charged = models.DecimalField(_('Amount Charged'),
             max_digits=8, decimal_places=2, default=0)
     dt_init = models.DateTimeField(_('DateTime Initialized'))
+    dt_expires = models.DateTimeField(_('DateTime Expires'),
+            blank=True, null=True)
 
     last_notify_type = models.PositiveSmallIntegerField(
             _('Last Notification Type'),

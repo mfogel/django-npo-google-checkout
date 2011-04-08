@@ -105,7 +105,10 @@ class NotificationListenerView(TemplateView):
         self.notify_type = self._extract_notify_type(notify_xml)
         self.notify_type_const = \
             GoogleOrder.trans_notify_type_const(self.notify_type)
-        self.timestamp = self._extract_timestamp(notify_xml)
+
+        ts_utc = dt_parse(notify_xml.find(xpq_timestamp).text)
+        self.timestamp = self._trans_utc_to_local(ts_utc)
+
         self.serial_number = notify_xml.get('serial-number')
         self.order_number = long(notify_xml.findtext(xpq_order_number))
 
@@ -121,7 +124,7 @@ class NotificationListenerView(TemplateView):
 
         # notification type-specific handling
         if self.notify_type_const == GoogleOrder.NEW_ORDER_NOTIFY_TYPE:
-            self._post_new_order()
+            self._post_new_order(notify_xml)
         else:
             order = GoogleOrder.objects.get(number=self.order_number)
             order.last_notify_type = self.notify_type_const
@@ -152,22 +155,28 @@ class NotificationListenerView(TemplateView):
 
     def _extract_notify_type(self, notify_xml):
         notify_type = notify_xml.tag
+        # remove xmlns
         if notify_type[0] == '{':
             r_indx = notify_type.find('}')
             notify_type = notify_type[r_indx+1:]
         return notify_type
 
-    def _extract_timestamp(self, notify_xml):
-        """Extract the timestamp, converted to the local timezone"""
-        ts_utc = dt_parse(notify_xml.find(xpq_timestamp).text)
+    def _trans_utc_to_local(self, ts_utc):
+        """Translate the given utc datetime object to the local timezone"""
         ts_local = ts_utc - timedelta(seconds=time.timezone)
         ts_local = ts_local.replace(tzinfo=None)
         return ts_local
 
-    def _post_new_order(self):
+    def _post_new_order(self, notify_xml):
+        expires_utc_node = notify_xml.find(xpq_good_until_date)
+        expires = None
+        if expires_utc_node:
+            expires_utc = dt_parse(expires_utc_node.text)
+            expires = self._extract_timestamp(expires_utc)
         order = GoogleOrder.objects.create(
                 cart=self.cart, number=self.order_number,
-                dt_init=self.timestamp, last_notify_dt=self.timestamp)
+                dt_init=self.timestamp, last_notify_dt=self.timestamp,
+                dt_expires=expires)
         notification_new_order.send(self, cart=self.cart, order=order)
 
     def _post_order_state_change(self, order, notify_xml):

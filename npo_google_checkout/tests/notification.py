@@ -87,6 +87,9 @@ class NotificationTests(TestCase):
         self.assertEqual(go.dt_init, self.new_order_timestamp)
         self.assertEqual(go.amount_charged, 0)
 
+        # TODO: change the data files such that expires timestamp is also
+        #   tested - do that test here.
+
         res, go = self._base_notification(self.order_state_change_1_path,
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
