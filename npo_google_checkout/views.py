@@ -9,6 +9,7 @@ from xml.etree.ElementTree import XML
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ImproperlyConfigured
+from django.db.utils import IntegrityError
 from django.http import Http404, HttpResponseServerError
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
@@ -94,7 +95,8 @@ class NotificationListenerView(TemplateView):
     def get(self, *args, **kwargs):
         raise Http404("GET method not allowed.")
 
-    # TODO: this fails when on the post. intended?
+    # django bug: this can only be applied to the dispatch() method.
+    # http://code.djangoproject.com/ticket/15794
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
       return super(NotificationListenerView, self).dispatch(*args, **kwargs)
@@ -174,11 +176,14 @@ class NotificationListenerView(TemplateView):
             expires_utc = dt_parse(expires_utc_node.text)
             expires = self._trans_utc_to_local(expires_utc)
 
-        order = GoogleOrder.objects.create(
-                cart=self.cart, number=self.order_number,
-                dt_init=self.timestamp, last_notify_dt=self.timestamp,
-                dt_expires=expires)
-        notification_new_order.send(self, cart=self.cart, order=order)
+        # check to see if we already have seen that order before inserting it
+        # recovering from a db IntegrityError on failure is more complicated
+        if not GoogleOrder.objects.filter(number=self.order_number).exists():
+            order = GoogleOrder.objects.create(
+                    cart=self.cart, number=self.order_number,
+                    dt_init=self.timestamp, last_notify_dt=self.timestamp,
+                    dt_expires=expires)
+            notification_new_order.send(self, cart=self.cart, order=order)
 
     def _post_order_state_change(self, order, notify_xml):
         old_state = order.state
