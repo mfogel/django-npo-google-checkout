@@ -68,8 +68,6 @@ class GoogleOrder(models.Model):
                 return pair[0]
         return None
 
-    # TODO: integrate google order expiration dt?
-
     cart = models.ForeignKey(settings.NGC_CART_MODEL, blank=True, null=True)
     # FIXME: no PositiveBigIntegerField ?
     number = models.BigIntegerField(_('Number'), db_index=True)

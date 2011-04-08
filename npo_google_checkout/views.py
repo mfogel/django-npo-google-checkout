@@ -65,7 +65,7 @@ class OrderSubmitView(RedirectView):
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
             redirect_xml = XML(self.gc_raw_post_data)
-            redirect_url = redirect_xml.find(xpq_redirect_url).text;
+            redirect_url = redirect_xml.findtext(xpq_redirect_url)
             self.serial_number = redirect_xml.get('serial-number')
         except:
             return HttpResponseServerError("Sorry - we're having trouble communicating with google checkout.")
@@ -106,7 +106,7 @@ class NotificationListenerView(TemplateView):
         self.notify_type_const = \
             GoogleOrder.trans_notify_type_const(self.notify_type)
 
-        ts_utc = dt_parse(notify_xml.find(xpq_timestamp).text)
+        ts_utc = dt_parse(notify_xml.findtext(xpq_timestamp))
         self.timestamp = self._trans_utc_to_local(ts_utc)
 
         self.serial_number = notify_xml.get('serial-number')
@@ -169,10 +169,12 @@ class NotificationListenerView(TemplateView):
 
     def _post_new_order(self, notify_xml):
         expires_utc_node = notify_xml.find(xpq_good_until_date)
+
         expires = None
-        if expires_utc_node:
+        if expires_utc_node is not None:
             expires_utc = dt_parse(expires_utc_node.text)
-            expires = self._extract_timestamp(expires_utc)
+            expires = self._trans_utc_to_local(expires_utc)
+
         order = GoogleOrder.objects.create(
                 cart=self.cart, number=self.order_number,
                 dt_init=self.timestamp, last_notify_dt=self.timestamp,
@@ -205,7 +207,7 @@ class NotificationListenerView(TemplateView):
 
     def _post_charge_amount(self, order, notify_xml):
         order.amount_charged = \
-            Decimal(notify_xml.find(xpq_total_charge_amount).text)
+            Decimal(notify_xml.findtext(xpq_total_charge_amount))
         order.save()
         latest_amount = Decimal(notify_xml.findtext(xpq_latest_charge_amount))
         notification_risk_information.send(self,

@@ -36,6 +36,9 @@
         </item>
       </items>
       <merchant-private-data>15</merchant-private-data>
+      <cart-expiration>
+        <good-until-date>2011-04-08T07:07:49.000Z</good-until-date>
+      </cart-expiration>
     </shopping-cart>
     <order-adjustment>
       <merchant-codes />
@@ -78,6 +81,9 @@
       </item>
     </items>
     <merchant-private-data>15</merchant-private-data>
+    <cart-expiration>
+      <good-until-date>2011-04-08T07:07:49.000Z</good-until-date>
+    </cart-expiration>
   </shopping-cart>
   <order-adjustment>
     <merchant-codes />

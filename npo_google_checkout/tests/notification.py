@@ -55,6 +55,12 @@ class NotificationTests(TestCase):
         self.order_number = long(no_xml.findtext(xpq_order_number))
         self.new_order_timestamp = self._extract_timestamp(no_xml)
 
+        self.dt_expires = None
+        expires_node = no_xml.find(xpq_good_until_date)
+        if expires_node is not None:
+            expires_utc = dt_parse(expires_node.text)
+            self.dt_expires = self._trans_utc_to_local(expires_utc)
+
         osc1_xml = XML(open(join(self.order_state_change_1_path)).read())
         self.order_state_change_1_timestamp = self._extract_timestamp(osc1_xml)
 
@@ -86,9 +92,7 @@ class NotificationTests(TestCase):
                 self.new_order_timestamp)
         self.assertEqual(go.dt_init, self.new_order_timestamp)
         self.assertEqual(go.amount_charged, 0)
-
-        # TODO: change the data files such that expires timestamp is also
-        #   tested - do that test here.
+        self.assertEqual(go.dt_expires, self.dt_expires)
 
         res, go = self._base_notification(self.order_state_change_1_path,
                 GoogleOrder.CHARGEABLE_STATE,
@@ -140,6 +144,9 @@ class NotificationTests(TestCase):
     def _extract_timestamp(self, notify_xml):
         """Extract the timestamp, converted to the local timezone"""
         ts_utc = dt_parse(notify_xml.findtext(xpq_timestamp))
+        return self._trans_utc_to_local(ts_utc)
+
+    def _trans_utc_to_local(self, ts_utc):
         ts_local = ts_utc - timedelta(seconds=time.timezone)
         ts_local = ts_local.replace(tzinfo=None)
         return ts_local
