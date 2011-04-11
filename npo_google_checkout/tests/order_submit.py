@@ -7,10 +7,12 @@ from os.path import dirname, join
 from xml.etree.ElementTree import XML
 
 from django.core.urlresolvers import reverse
+from django.dispatch import receiver
 from django.test import TestCase
 
 from .. import settings as ngc_settings
 from ..models import OrderSubmitRedirect
+from ..signals import order_submit
 from ..views import OrderSubmitView
 from ..xpath import xpq_redirect_url
 
@@ -19,8 +21,13 @@ class OrderSubmitTests(TestCase):
     data_dir = join(dirname(__file__), 'data', 'order_submit')
     checkout_redirect_fn = 'checkout-redirect.xml'
 
+    def order_submit_receiver(self, sender, **kwargs):
+        self.signal_kwargs = kwargs
+
     def setUp(self):
         self.path = reverse('ngc-order-submit')
+
+        order_submit.connect(self.order_submit_receiver)
 
         # semi-hacky. get the order-submit requiest to hit the file on disk
         # see use of 'order_submit_url' in views.py
@@ -45,6 +52,13 @@ class OrderSubmitTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], self.redirect_url)
 
+        # check the db populated correctly
         osr = OrderSubmitRedirect.objects.get()
         self.assertEqual(osr.redirect_url, self.redirect_url)
         self.assertLess(osr.dt, datetime.now())
+
+        # check the signals was sent correctly
+        self.assertEqual(self.signal_kwargs['redirect_url'], self.redirect_url)
+        # UPGRADE: when making tests with a testing backend, could test
+        #   'cart' better
+        self.assertEqual( self.signal_kwargs['cart'], None)
