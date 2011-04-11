@@ -61,6 +61,11 @@ class OrderSubmitView(RedirectView):
                 NGC_API_BASE_URL=ngc_settings.API_BASE_URL,
                 NGC_MERCHANT_ID=ngc_settings.MERCHANT_ID)
         xml = self.backend.get_order_submit_xml()
+
+        logger.info(
+            "GC order-redirect requested.",
+            extra={'request': self.request, 'raw_post_data': xml})
+
         self.gc_raw_post_data = self.syncronous_gc_request(url, xml)
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
