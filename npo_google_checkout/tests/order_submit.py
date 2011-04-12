@@ -22,11 +22,11 @@ class OrderSubmitTests(TestCase):
     checkout_redirect_fn = 'checkout-redirect.xml'
 
     def order_submit_receiver(self, sender, **kwargs):
+        "Receiver to test signals sent out"
         self.signal_kwargs = kwargs
 
     def setUp(self):
         self.path = reverse('ngc-order-submit')
-
         order_submit.connect(self.order_submit_receiver)
 
         # semi-hacky. get the order-submit requiest to hit the file on disk

@@ -7,13 +7,14 @@ from datetime import datetime, timedelta
 from dateutil.parser import parse as dt_parse
 from decimal import Decimal
 from os.path import dirname, join
-from xml.etree.ElementTree import XML
+from xml.etree.ElementTree import tostring, XML
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from .. import settings as ngc_settings
 from ..models import GoogleOrder
+from ..signals import *
 from ..xpath import *
 from .google_checkout_client import GCClient
 
@@ -23,8 +24,6 @@ RESPONSE_FRMT_STR = """<notification-acknowledgment xmlns="http://checkout.googl
 # FIXME: a good way to test csrf stuff? client should
 #        not send any csrf tokens
 
-# FIXME: a good way to test signals being sent out?
-
 # FIXME: test setting of associated cart via <merchant-private-data>?
 #        this would require a short custom testing backend with a fake cart
 
@@ -33,10 +32,22 @@ class NotificationTestsMixin(object):
     client_class = GCClient
     data_dir = join(dirname(__file__), 'data', 'notification')
 
+    def notification_receiver(self, sender, **kwargs):
+        "Receiver to test signals sent out"
+        self.signal_kwargs = kwargs
+
     def setUp(self):
         self.url = reverse('ngc-notification-listener')
+        self.signal_kwargs = {}
         ngc_settings.BACKEND = \
             'npo_google_checkout.backends.default.DefaultBackend'
+
+        # connect all of our signals up
+        notification_new_order.connect(self.notification_receiver)
+        notification_order_state_change.connect(self.notification_receiver)
+        notification_risk_information.connect(self.notification_receiver)
+        notification_authorization_amount.connect(self.notification_receiver)
+        notification_charge_amount.connect(self.notification_receiver)
 
     def _base_notification(self, test_xml_fn):
         xml = open(join(self.data_dir, test_xml_fn)).read()
@@ -121,14 +132,17 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
 
         ri_xml = self._open_xml(self.risk_information_fn)
         self.risk_information_timestamp = self._extract_timestamp(ri_xml)
+        self.risk_info_xml_node = ri_xml.find(xpq_risk_info)
 
         aa_xml = self._open_xml(self.authorization_amount_fn)
         self.authorization_amount_timestamp = self._extract_timestamp(aa_xml)
+        self.authorization_amount = \
+            Decimal(aa_xml.findtext(xpq_authorization_amount))
 
         ca_xml = self._open_xml(self.charge_amount_fn)
         self.charge_amount_timestamp = self._extract_timestamp(ca_xml)
-        self.total_charge_amount = \
-            Decimal(ca_xml.findtext(xpq_total_charge_amount))
+        self.latest_amount = Decimal(ca_xml.findtext(xpq_latest_charge_amount))
+        self.total_amount = Decimal(ca_xml.findtext(xpq_total_charge_amount))
 
 
     def test_basic(self):
@@ -151,37 +165,59 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
                 self.order_state_change_1_timestamp)
+        self.assertEqual(
+            self.signal_kwargs['old_state'], GoogleOrder.REVIEWING_STATE)
+        self.assertEqual(
+            self.signal_kwargs['new_state'], GoogleOrder.CHARGEABLE_STATE)
 
         self._base_notification(self.risk_information_fn)
         go = self._base_assertions(
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.RISK_INFORMATION_NOTIFY_TYPE,
                 self.risk_information_timestamp)
+        self.assertEqual(
+            tostring(self.signal_kwargs['risk_info_xml_node']),
+            tostring(self.risk_info_xml_node))
 
         self._base_notification(self.authorization_amount_fn)
         go = self._base_assertions(
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.AUTHORIZATION_AMOUNT_NOTIFY_TYPE,
                 self.authorization_amount_timestamp)
+        self.assertEqual(
+            self.signal_kwargs['authorization_amount'],
+            self.authorization_amount)
 
         self._base_notification(self.order_state_change_2_fn)
         go = self._base_assertions(
                 GoogleOrder.CHARGING_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
                 self.order_state_change_2_timestamp)
+        self.assertEqual(
+            self.signal_kwargs['old_state'], GoogleOrder.CHARGEABLE_STATE)
+        self.assertEqual(
+            self.signal_kwargs['new_state'], GoogleOrder.CHARGING_STATE)
 
         self._base_notification(self.order_state_change_3_fn)
         go = self._base_assertions(
                 GoogleOrder.CHARGED_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
                 self.order_state_change_3_timestamp)
+        self.assertEqual(
+            self.signal_kwargs['old_state'], GoogleOrder.CHARGING_STATE)
+        self.assertEqual(
+            self.signal_kwargs['new_state'], GoogleOrder.CHARGED_STATE)
 
         self._base_notification(self.charge_amount_fn)
         go = self._base_assertions(
                 GoogleOrder.CHARGED_STATE,
                 GoogleOrder.CHARGE_AMOUNT_NOTIFY_TYPE,
                 self.charge_amount_timestamp)
-        self.assertEqual(go.amount_charged, self.total_charge_amount)
+        self.assertEqual(go.amount_charged, self.total_amount)
+        self.assertEqual(
+            self.signal_kwargs['latest_amount'], self.latest_amount)
+        self.assertEqual(
+            self.signal_kwargs['total_amount'], self.total_amount)
 
     def _base_assertions(self, state, notify_type, timestamp):
         go = GoogleOrder.objects.get()
@@ -189,4 +225,7 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         self.assertEqual(go.state, state)
         self.assertEqual(go.last_notify_type, notify_type)
         self.assertEqual(go.last_notify_dt, timestamp)
+        self.assertEqual(self.signal_kwargs['order'], go)
+        # a testing backend would allow better testing of cart
+        self.assertEqual(self.signal_kwargs['cart'], None)
         return go
