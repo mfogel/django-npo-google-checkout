@@ -210,7 +210,7 @@ class NotificationListenerView(TemplateView):
     def _post_authorization_amount(self, order, notify_xml):
         order.save()
         auth_amount = Decimal(notify_xml.findtext(xpq_authorization_amount))
-        notification_risk_information.send(self,
+        notification_authorization_amount.send(self,
                 cart=self.cart, order=order,
                 authorization_amount=auth_amount)
 
@@ -219,6 +219,6 @@ class NotificationListenerView(TemplateView):
             Decimal(notify_xml.findtext(xpq_total_charge_amount))
         order.save()
         latest_amount = Decimal(notify_xml.findtext(xpq_latest_charge_amount))
-        notification_risk_information.send(self,
+        notification_charge_amount.send(self,
                 cart=self.cart, order=order,
                 latest_amount=latest_amount, total_amount=order.amount_charged)

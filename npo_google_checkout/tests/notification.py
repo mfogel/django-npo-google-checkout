@@ -155,7 +155,8 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.REVIEWING_STATE,
                 GoogleOrder.NEW_ORDER_NOTIFY_TYPE,
-                self.new_order_timestamp)
+                self.new_order_timestamp,
+                notification_new_order)
         self.assertEqual(go.dt_init, self.new_order_timestamp)
         self.assertEqual(go.amount_charged, 0)
         self.assertEqual(go.dt_expires, self.dt_expires)
@@ -164,7 +165,8 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
-                self.order_state_change_1_timestamp)
+                self.order_state_change_1_timestamp,
+                notification_order_state_change)
         self.assertEqual(
             self.signal_kwargs['old_state'], GoogleOrder.REVIEWING_STATE)
         self.assertEqual(
@@ -174,7 +176,8 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.RISK_INFORMATION_NOTIFY_TYPE,
-                self.risk_information_timestamp)
+                self.risk_information_timestamp,
+                notification_risk_information)
         self.assertEqual(
             tostring(self.signal_kwargs['risk_info_xml_node']),
             tostring(self.risk_info_xml_node))
@@ -183,7 +186,8 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.CHARGEABLE_STATE,
                 GoogleOrder.AUTHORIZATION_AMOUNT_NOTIFY_TYPE,
-                self.authorization_amount_timestamp)
+                self.authorization_amount_timestamp,
+                notification_authorization_amount)
         self.assertEqual(
             self.signal_kwargs['authorization_amount'],
             self.authorization_amount)
@@ -192,7 +196,8 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.CHARGING_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
-                self.order_state_change_2_timestamp)
+                self.order_state_change_2_timestamp,
+                notification_order_state_change)
         self.assertEqual(
             self.signal_kwargs['old_state'], GoogleOrder.CHARGEABLE_STATE)
         self.assertEqual(
@@ -202,7 +207,8 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.CHARGED_STATE,
                 GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE,
-                self.order_state_change_3_timestamp)
+                self.order_state_change_3_timestamp,
+                notification_order_state_change)
         self.assertEqual(
             self.signal_kwargs['old_state'], GoogleOrder.CHARGING_STATE)
         self.assertEqual(
@@ -212,20 +218,26 @@ class NotificationBasicTests(NotificationTestsMixin, TestCase):
         go = self._base_assertions(
                 GoogleOrder.CHARGED_STATE,
                 GoogleOrder.CHARGE_AMOUNT_NOTIFY_TYPE,
-                self.charge_amount_timestamp)
+                self.charge_amount_timestamp,
+                notification_charge_amount)
         self.assertEqual(go.amount_charged, self.total_amount)
         self.assertEqual(
             self.signal_kwargs['latest_amount'], self.latest_amount)
         self.assertEqual(
             self.signal_kwargs['total_amount'], self.total_amount)
 
-    def _base_assertions(self, state, notify_type, timestamp):
+    def _base_assertions(self, state, notify_type, timestamp, signal):
+        # ensure db filled correctly
         go = GoogleOrder.objects.get()
         self.assertEqual(go.number, self.order_number)
         self.assertEqual(go.state, state)
         self.assertEqual(go.last_notify_type, notify_type)
         self.assertEqual(go.last_notify_dt, timestamp)
+
+        # ensure signal was sent out correctly
+        self.assertEqual(self.signal_kwargs['signal'], signal)
         self.assertEqual(self.signal_kwargs['order'], go)
         # a testing backend would allow better testing of cart
         self.assertEqual(self.signal_kwargs['cart'], None)
+
         return go

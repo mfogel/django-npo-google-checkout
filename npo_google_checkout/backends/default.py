@@ -12,6 +12,8 @@ class DefaultBackend(object):
     Recommended to inherit from this class and override methods as
     desired.
     """
+    private_data = None
+    request = None
 
     def __init__(self, request, private_data=None):
         super(DefaultBackend, self).__init__()
