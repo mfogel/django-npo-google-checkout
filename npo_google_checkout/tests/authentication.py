@@ -9,6 +9,7 @@ from xml.etree.ElementTree import XML
 from django.test import TestCase
 
 from .. import settings as ngc_settings
+from ..backends import get_backend_class
 from ..views import OrderSubmitView
 from ..xpath import xmlns
 
@@ -25,13 +26,17 @@ class AuthenticationTests(TestCase):
         NOTE: example hello commands are broken. should be:
         curl -d '<hello xmlns="http://checkout.google.com/schema/2" />' https://{MERCHANT_ID}:{MERCHANT_KEY}@sandbox.google.com/checkout/api/checkout/v2/request/Merchant/{MERCHANT_ID}
         """
-
+        ngc_settings.BACKEND = \
+            'npo_google_checkout.backends.default.DefaultBackend'
+        backend = get_backend_class(ngc_settings.BACKEND)(None)
         url = self.url_frmt_str.format(
                 NGC_API_BASE_URL=ngc_settings.API_BASE_URL,
-                NGC_MERCHANT_ID=ngc_settings.MERCHANT_ID)
+                NGC_MERCHANT_ID=backend.get_merchant_id())
         data = self.request_frmt_str.format(xmlns=xmlns)
 
-        response_data = OrderSubmitView.syncronous_gc_request(url, data)
+        osv = OrderSubmitView()
+        osv.backend = backend
+        response_data = osv.syncronous_gc_request(url, data)
         response_xml_tree = XML(response_data)
         response_serial_number = response_xml_tree.get('serial-number')
 

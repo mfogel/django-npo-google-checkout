@@ -20,9 +20,13 @@ BACKEND = getattr(settings, 'NGC_BACKEND',
 # Required: NGC_CART_MOOEL identifies DB model that represents your cart
 CART_MODEL = settings.NGC_CART_MODEL
 
-# Required: google checkout provides you want a merchant id & key
-MERCHANT_ID = settings.NGC_MERCHANT_ID
-MERCHANT_KEY = settings.NGC_MERCHANT_KEY
+# NGC_MERCHANT_ID and NGC_MERCHANT_KEY must either must be defined
+# in your settings.py  - OR - you can override the get_merchant_id() and
+# get_merchant_key() methods in your ngc backend (useful if you're actually
+# interfacing with multiple NGC accounts.
+# For the tests to succeed, you have to set these in your settings.py
+MERCHANT_ID = getattr(settings, 'NGC_MERCHANT_ID', None)
+MERCHANT_KEY = getattr(settings, 'NGC_MERCHANT_KEY', None)
 
 # try for NGC_HTTP_TIMEOUT seconds to connect to GC before timing out.
 # on order submit redirect, user will be waiting for this real-time

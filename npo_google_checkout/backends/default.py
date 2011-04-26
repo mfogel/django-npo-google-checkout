@@ -20,6 +20,12 @@ class DefaultBackend(object):
         self.request = request
         self.private_data = private_data
 
+    def get_merchant_id(self):
+        return ngc_settings.MERCHANT_ID
+
+    def get_merchant_key(self):
+        return ngc_settings.MERCHANT_KEY
+
     def get_cart(self):
         """
         Use self.private_data and self.request to access the user's cart.

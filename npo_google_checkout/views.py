@@ -31,16 +31,13 @@ class OrderSubmitView(RedirectView):
     order_submit_frmt_str = \
         '{NGC_API_BASE_URL}/merchantCheckout/Donations/{NGC_MERCHANT_ID}'
 
-    @staticmethod
-    def syncronous_gc_request(url, data):
-        """
-        Seperating this out as a seperate function so communication with
-        google checkout can be tested seperately.
-        """
+    def syncronous_gc_request(self, url, data):
         # example:
         # http://code.google.com/p/chippysshop/source/browse/googlecheckout.py
-        auth_string = 'Basic {0}'.format(base64.b64encode(
-            ngc_settings.MERCHANT_ID + ':' + ngc_settings.MERCHANT_KEY))
+        auth_string_plain_text = ':'.join((self.backend.get_merchant_id(),
+                self.backend.get_merchant_key()))
+        auth_string = \
+            'Basic {0}'.format(base64.b64encode(auth_string_plain_text))
         headers = {
                 'Content-Type': 'application/xml; charset=UTF-8',
                 'Accept': 'application/xml; charset=UTF-8',
@@ -59,7 +56,7 @@ class OrderSubmitView(RedirectView):
     def get_redirect_url(self, **kwagrs):
         url = self.order_submit_frmt_str.format(
                 NGC_API_BASE_URL=ngc_settings.API_BASE_URL,
-                NGC_MERCHANT_ID=ngc_settings.MERCHANT_ID)
+                NGC_MERCHANT_ID=self.backend.get_merchant_id())
         xml = self.backend.get_order_submit_xml()
 
         logger.info(
