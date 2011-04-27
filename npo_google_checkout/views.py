@@ -53,7 +53,7 @@ class OrderSubmitView(RedirectView):
     def get(self, *args, **kwargs):
         raise Http404("GET method not allowed.")
 
-    def get_redirect_url(self, **kwagrs):
+    def get_redirect_xml(self, **kwagrs):
         url = self.order_submit_frmt_str.format(
                 NGC_API_BASE_URL=ngc_settings.API_BASE_URL,
                 NGC_MERCHANT_ID=self.backend.get_merchant_id())
@@ -67,27 +67,28 @@ class OrderSubmitView(RedirectView):
         try:
             # http://code.google.com/apis/checkout/developer/Google_Checkout_XML_API_Guide_for_Nonprofit_Organizations.html#create_checkout_cart
             redirect_xml = XML(self.gc_raw_post_data)
-            redirect_url = redirect_xml.findtext(xpq_redirect_url)
-            self.serial_number = redirect_xml.get('serial-number')
         except:
             return HttpResponseServerError("Sorry - we're having trouble communicating with google checkout.")
-        return redirect_url
+        return redirect_xml
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         backend_class = get_backend_class(ngc_settings.BACKEND)
         self.backend = backend_class(request)
         cart = self.backend.get_cart()
-        redirect_url = self.get_redirect_url()
+
+        redirect_xml = self.get_redirect_xml()
+        self.url = redirect_xml.findtext(xpq_redirect_url)
+        self.serial_number = redirect_xml.get('serial-number')
+
         resp = super(OrderSubmitView, self).get(request, *args, **kwargs)
 
         logger.info(
             "GC order-redirect #{0} received.".format(self.serial_number),
             extra={'request': request, 'raw_post_data': self.gc_raw_post_data})
 
-        OrderSubmitRedirect.objects.create(
-                cart=cart, redirect_url=redirect_url)
-        order_submit.send(self, cart=cart, redirect_url=redirect_url)
+        OrderSubmitRedirect.objects.create(cart=cart, redirect_url=self.url)
+        order_submit.send(self, cart=cart, redirect_url=self.url)
         return resp
 
 

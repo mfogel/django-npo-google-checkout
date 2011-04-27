@@ -45,6 +45,7 @@ class OrderSubmitTests(TestCase):
 
     def test_basic(self):
         # user makes request to order redirect page
+        # TODO: remove this hardcoded user - or add a fixture for them.
         self.client.login(username='mike', password='test')
         response = self.client.post(self.path)
 
