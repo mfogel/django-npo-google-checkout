@@ -130,10 +130,16 @@ class NotificationListenerView(TemplateView):
         if self.notify_type_const == GoogleOrder.NEW_ORDER_NOTIFY_TYPE:
             self._post_new_order(notify_xml)
         else:
-            order = GoogleOrder.objects.get(number=self.order_number)
-            order.last_notify_type = self.notify_type_const
-            order.last_notify_dt = self.timestamp
-            if self.notify_type_const == GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE:
+            try:
+                order = GoogleOrder.objects.get(number=self.order_number)
+                order.last_notify_type = self.notify_type_const
+                order.last_notify_dt = self.timestamp
+            except GoogleOrder.DoesNotExist:
+                # silently ignore notifications for orders not associated w/us
+                order = None
+            if not order:
+                pass
+            elif self.notify_type_const == GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE:
                 self._post_order_state_change(order, notify_xml)
             elif self.notify_type_const == GoogleOrder.RISK_INFORMATION_NOTIFY_TYPE:
                 self._post_risk_informaiton(order, notify_xml)
