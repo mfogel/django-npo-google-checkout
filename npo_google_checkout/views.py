@@ -116,9 +116,8 @@ class NotificationListenerView(TemplateView):
         self.serial_number = notify_xml.get('serial-number')
         self.order_number = long(notify_xml.findtext(xpq_order_number))
 
-        private_data = notify_xml.findtext(xpq_merchant_private_data)
         backend_class = get_backend_class(ngc_settings.BACKEND)
-        self.backend = backend_class(request, private_data=private_data)
+        self.backend = backend_class(request, notify_xml=notify_xml)
         self.cart = self.backend.get_cart()
 
         # if we don't find a cart, we do actually go ahead and continue
