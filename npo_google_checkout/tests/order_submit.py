@@ -18,6 +18,7 @@ from ..xpath import xpq_redirect_url
 
 
 class OrderSubmitTests(TestCase):
+    fixtures = ['ngc_auth_user']
     data_dir = join(dirname(__file__), 'data', 'order_submit')
     checkout_redirect_fn = 'checkout-redirect.xml'
 
@@ -45,8 +46,7 @@ class OrderSubmitTests(TestCase):
 
     def test_basic(self):
         # user makes request to order redirect page
-        # TODO: remove this hardcoded user - or add a fixture for them.
-        self.client.login(username='mike', password='test')
+        self.client.login(username='test', password='test')
         response = self.client.post(self.path)
 
         # django 1.3: TestCase.assertRedirects can't be used for ext. urls
