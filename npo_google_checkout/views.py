@@ -121,10 +121,15 @@ class NotificationListenerView(TemplateView):
         self.backend = backend_class(request, private_data=private_data)
         self.cart = self.backend.get_cart()
 
-        logger.info(
-            "GC {0} #{1} received.".format(
-                self.notify_type, self.serial_number),
-            extra={'request': request})
+        # if we don't find a cart, we do actually go ahead and continue
+        # processing. The idea is the data npo_google_checkout holds should
+        # match all of what google checkout holds
+
+        msg_target = "cart '{0}'".format(self.cart) \
+                if self.cart else 'unknown cart'
+        msg = "GC {0} #{1} received for {2}.".format(
+                self.notify_type, self.serial_number, msg_target),
+        logger.info(msg, extra={'request': request})
 
         # notification type-specific handling
         if self.notify_type_const == GoogleOrder.NEW_ORDER_NOTIFY_TYPE:
@@ -132,12 +137,15 @@ class NotificationListenerView(TemplateView):
         else:
             try:
                 order = GoogleOrder.objects.get(number=self.order_number)
+            except GoogleOrder.DoesNotExist:
+                order = None
+            else:
                 order.last_notify_type = self.notify_type_const
                 order.last_notify_dt = self.timestamp
-            except GoogleOrder.DoesNotExist:
-                # silently ignore notifications for orders not associated w/us
-                order = None
+
             if not order:
+                # silently ignore notifications for orders we didn't see the
+                # new-order-notification for
                 pass
             elif self.notify_type_const == GoogleOrder.ORDER_STATE_CHANGE_NOTIFY_TYPE:
                 self._post_order_state_change(order, notify_xml)
