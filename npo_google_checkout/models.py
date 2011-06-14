@@ -1,10 +1,7 @@
-from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
 
 from . import settings as ngc_settings
-from .signals import order_submit
 
 
 class OrderSubmitRedirect(models.Model):
@@ -13,7 +10,7 @@ class OrderSubmitRedirect(models.Model):
     dt = models.DateTimeField(_('DateTime'), auto_now_add=True)
 
     def __unicode__(self):
-        return unicode(sef.cart) + ' -> ' + self.redirect_url
+        return unicode(self.cart) + ' -> ' + self.redirect_url
 
 
 class GoogleOrder(models.Model):
